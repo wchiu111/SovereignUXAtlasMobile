@@ -285,7 +285,7 @@ export default function CaseStudyOverviewConstellation({
               fontFamily={T.mono}
               fontSize={10.5}
               letterSpacing="0.08em"
-              fill={project.color}
+              fill={T.caseStudies}
               opacity={
                 transitionPreview || !labelsVisible
                   ? 0
