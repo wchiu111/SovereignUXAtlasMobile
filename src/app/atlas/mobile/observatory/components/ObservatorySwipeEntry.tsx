@@ -157,7 +157,7 @@ export default function ObservatorySwipeEntry({
         style={{
           position: "absolute",
           left: "50%",
-          top: 8,
+          top: 2,
           width: 38 + progress * 32,
           height: 38 + progress * 32,
           transform: `translate(-50%, ${-progress * 17}px)`,
@@ -179,7 +179,7 @@ export default function ObservatorySwipeEntry({
         style={{
           position: "absolute",
           left: "50%",
-          top: 15,
+          top: 9,
           width: 0.5,
           height: 18 + progress * 27,
           transform: `translate(-50%, ${-progress * 16}px)`,
@@ -202,7 +202,7 @@ export default function ObservatorySwipeEntry({
         style={{
           position: "absolute",
           left: "50%",
-          top: 27,
+          top: 21,
           width: 7,
           height: 7,
           transform: `translate(-50%, ${-progress * 34}px) rotate(45deg)`,
@@ -233,7 +233,7 @@ export default function ObservatorySwipeEntry({
           lineHeight: 1.1,
           letterSpacing: "0.20em",
           color: T.identityGold,
-          opacity: 0.70 + progress * 0.22,
+          opacity: 0.52 + progress * 0.30,
           transform: `translateY(${progress * 2}px)`,
           textAlign: "center",
           transition: dragging

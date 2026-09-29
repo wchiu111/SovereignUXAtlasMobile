@@ -793,10 +793,9 @@ export default function LandingScene({
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            padding: "calc(58px + env(safe-area-inset-top, 0px)) 22px 0",
+            top: "calc(68px + env(safe-area-inset-top, 0px))",
+            left: 4.5,
+            right: 4.5,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -812,11 +811,11 @@ export default function LandingScene({
           <div
             style={{
               fontFamily: T.mono,
-              fontSize: 11.5,
-              letterSpacing: "0.20em",
+              fontSize: 15,
+              lineHeight: "19px",
+              letterSpacing: "3.2px",
               color: T.identityGold,
-              opacity: 0.82,
-              lineHeight: 1.25,
+              opacity: 1,
               whiteSpace: "nowrap",
             }}
           >
@@ -824,13 +823,14 @@ export default function LandingScene({
           </div>
           <div
             style={{
+              marginTop: 4,
               fontFamily: T.serif,
-              fontSize: 13.5,
-              letterSpacing: "0.06em",
-              color: T.accentGold,
-              opacity: 0.52,
-              marginTop: 5,
-              lineHeight: 1.25,
+              fontSize: 13,
+              lineHeight: "20px",
+              letterSpacing: "0.5px",
+              color: T.body,
+              opacity: 0.75,
+              whiteSpace: "nowrap",
             }}
           >
             Three systems in orbit
