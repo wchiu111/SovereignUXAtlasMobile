@@ -26,7 +26,6 @@ export default function ObservatoryPreview({
       <AtlasOverviewDrawer
         title={hotspot.label}
         titleColor={hotspot.color}
-        titleLetterSpacing="0em"
         color={hotspot.color}
         countLabel={hotspot.eyebrow.toUpperCase()}
         phase="open"

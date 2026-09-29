@@ -3,9 +3,8 @@ import type { ObservatoryHotspotDefinition } from "../observatoryTypes";
 /**
  * Portrait-authored interaction coordinates for the 390 × 844 mobile stage.
  *
- * Label positions include the latest Figma refinements:
- * - Journey sits farther below its node for clearer separation.
- * - Philosophy is moved below its node to match the other destinations.
+ * Labels use a shared 30px vertical gap below their node centers.
+ * About Wilson established the spacing reference for the Observatory system.
  */
 export const OBSERVATORY_HOTSPOTS: readonly ObservatoryHotspotDefinition[] = [
   {
@@ -17,7 +16,7 @@ export const OBSERVATORY_HOTSPOTS: readonly ObservatoryHotspotDefinition[] = [
     x: 79,
     y: 313,
     labelX: 70,
-    labelY: 348,
+    labelY: 343,
     align: "left",
     camera: {
       translateX: 22,
@@ -34,7 +33,7 @@ export const OBSERVATORY_HOTSPOTS: readonly ObservatoryHotspotDefinition[] = [
     x: 116,
     y: 435,
     labelX: 116,
-    labelY: 456,
+    labelY: 465,
     align: "center",
     camera: {
       translateX: 18,
@@ -68,7 +67,7 @@ export const OBSERVATORY_HOTSPOTS: readonly ObservatoryHotspotDefinition[] = [
     x: 316,
     y: 443,
     labelX: 274,
-    labelY: 478,
+    labelY: 473,
     align: "left",
     camera: {
       translateX: -20,
@@ -85,7 +84,7 @@ export const OBSERVATORY_HOTSPOTS: readonly ObservatoryHotspotDefinition[] = [
     x: 196,
     y: 256,
     labelX: 196,
-    labelY: 280,
+    labelY: 286,
     align: "center",
     camera: {
       translateX: -24,

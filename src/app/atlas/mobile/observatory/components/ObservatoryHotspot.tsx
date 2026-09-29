@@ -67,7 +67,12 @@ export default function ObservatoryHotspot({
         background: "transparent",
         cursor: disabled ? "default" : "pointer",
         opacity: subdued ? 0.42 : 1,
-        transition: "opacity 240ms ease, filter 240ms ease",
+        transform:
+          selected && hotspot.id === "about"
+            ? "translateY(-20px)"
+            : "translateY(0)",
+        transition:
+          "transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 240ms ease, filter 240ms ease",
         WebkitTapHighlightColor: "transparent",
       }}
     >
