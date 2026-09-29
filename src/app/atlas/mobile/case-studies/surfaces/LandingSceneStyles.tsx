@@ -139,117 +139,117 @@ export default function LandingSceneStyles() {
 
         @keyframes atlasLandingSystemAtmosphereBreath {
           0%, 100% {
-            transform: scale(0.985);
-            filter: brightness(0.96);
+            transform: scale(0.96);
+            filter: brightness(0.92);
           }
           44% {
-            transform: scale(1.07);
-            filter: brightness(1.16);
+            transform: scale(1.12);
+            filter: brightness(1.24);
           }
           72% {
-            transform: scale(1.018);
-            filter: brightness(1.04);
+            transform: scale(1.035);
+            filter: brightness(1.08);
           }
         }
 
         @keyframes atlasLandingSystemRingBreath {
           0%, 100% {
-            transform: scale(0.994);
-            filter: brightness(0.98);
+            transform: scale(0.98);
+            filter: brightness(0.94);
           }
           50% {
-            transform: scale(1.028);
-            filter: brightness(1.15);
+            transform: scale(1.055);
+            filter: brightness(1.22);
           }
           78% {
-            transform: scale(1.008);
-            filter: brightness(1.04);
+            transform: scale(1.015);
+            filter: brightness(1.07);
           }
         }
 
         @keyframes atlasLandingSystemCoreBreath {
           0%, 100% {
-            transform: scale(0.99);
-            filter: brightness(0.98);
+            transform: scale(0.985);
+            filter: brightness(0.94);
           }
           48% {
-            transform: scale(1.035);
-            filter: brightness(1.20);
+            transform: scale(1.055);
+            filter: brightness(1.30);
           }
           76% {
-            transform: scale(1.008);
-            filter: brightness(1.05);
+            transform: scale(1.014);
+            filter: brightness(1.08);
           }
         }
 
         @keyframes atlasLandingSatelliteDriftA {
           0%, 100% { transform: translate(0px, 0px); }
-          35% { transform: translate(1.4px, -1.1px); }
-          72% { transform: translate(-0.7px, 1.0px); }
+          35% { transform: translate(3.4px, -2.6px); }
+          72% { transform: translate(-1.8px, 2.4px); }
         }
 
         @keyframes atlasLandingSatelliteDriftB {
           0%, 100% { transform: translate(0px, 0px); }
-          38% { transform: translate(-1.2px, -0.7px); }
-          74% { transform: translate(0.9px, 1.3px); }
+          38% { transform: translate(-3.0px, -1.8px); }
+          74% { transform: translate(2.4px, 3.0px); }
         }
 
         @keyframes atlasLandingSatelliteDriftC {
           0%, 100% { transform: translate(0px, 0px); }
-          42% { transform: translate(0.8px, 1.4px); }
-          78% { transform: translate(-1.3px, -0.5px); }
+          42% { transform: translate(2.1px, 3.3px); }
+          78% { transform: translate(-3.2px, -1.4px); }
         }
 
         @keyframes atlasLandingSatelliteDriftD {
           0%, 100% { transform: translate(0px, 0px); }
-          33% { transform: translate(-0.8px, 1.0px); }
-          70% { transform: translate(1.2px, -1.2px); }
+          33% { transform: translate(-2.2px, 2.6px); }
+          70% { transform: translate(3.0px, -2.8px); }
         }
 
         @keyframes atlasLandingNexusFieldBreath {
           0%, 100% {
-            transform: scale(0.97);
-            opacity: 0.55;
+            transform: scale(0.93);
+            opacity: 0.56;
           }
           48% {
-            transform: scale(1.055);
+            transform: scale(1.12);
             opacity: 1;
           }
           76% {
-            transform: scale(1.012);
-            opacity: 0.74;
+            transform: scale(1.035);
+            opacity: 0.78;
           }
         }
 
         @keyframes atlasLandingNexusRingBreath {
           0%, 100% {
-            transform: scale(0.994);
-            filter: brightness(0.98);
+            transform: scale(0.98);
+            filter: brightness(0.95);
           }
           52% {
-            transform: scale(1.018);
-            filter: brightness(1.12);
+            transform: scale(1.045);
+            filter: brightness(1.20);
           }
         }
 
         @keyframes atlasLandingNexusCoreBreath {
           0%, 100% {
-            transform: scale(0.992);
-            filter: brightness(0.98);
+            transform: scale(0.985);
+            filter: brightness(0.94);
           }
           50% {
-            transform: scale(1.026);
-            filter: brightness(1.18);
+            transform: scale(1.05);
+            filter: brightness(1.28);
           }
           78% {
-            transform: scale(1.006);
-            filter: brightness(1.04);
+            transform: scale(1.014);
+            filter: brightness(1.08);
           }
         }
 
         @keyframes atlasLandingOrbitFlow {
           from { stroke-dashoffset: 0; }
-          to { stroke-dashoffset: -46; }
+          to { stroke-dashoffset: -88; }
         }
 
         .atlas-project-atmosphere,
@@ -370,23 +370,23 @@ export default function LandingSceneStyles() {
           animation-name: atlasLandingOrbitFlow;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
-          animation-duration: 46s;
+          animation-duration: 24s;
           will-change: stroke-dashoffset;
         }
 
         svg[aria-hidden] > path[stroke-dasharray="4.5 7"]:nth-of-type(1) {
-          animation-duration: 38s;
+          animation-duration: 20s;
           animation-delay: -6s;
         }
 
         svg[aria-hidden] > path[stroke-dasharray="4.5 7"]:nth-of-type(2) {
-          animation-duration: 46s;
+          animation-duration: 24s;
           animation-delay: -18s;
           animation-direction: reverse;
         }
 
         svg[aria-hidden] > path[stroke-dasharray="4.5 7"]:nth-of-type(3) {
-          animation-duration: 54s;
+          animation-duration: 30s;
           animation-delay: -11s;
         }
 

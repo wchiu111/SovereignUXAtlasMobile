@@ -133,7 +133,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       phase: Math.random() * Math.PI * 2,
       spd:   Math.random() * 0.0009 + 0.0002,
       gold:  Math.random() < 0.30,
-      hero:  index % 47 === 0,
+      hero:  index % 31 === 0,
     }));
 
     let cssWidth = W;
@@ -195,13 +195,13 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         ((time + phaseOffset) % cycleMs) / cycleMs;
 
       // A signal is present for only a small portion of the cycle.
-      const windowStart = 0.79;
-      const windowEnd = 0.86;
+      const windowStart = 0.74;
+      const windowEnd = 0.84;
       if (phase < windowStart || phase > windowEnd) return;
 
       const local =
         (phase - windowStart) / (windowEnd - windowStart);
-      const alpha = Math.sin(local * Math.PI) * 0.30;
+      const alpha = Math.sin(local * Math.PI) * 0.48;
 
       const x1 = startNX * cssWidth;
       const y1 = startNY * cssHeight;
@@ -295,24 +295,24 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         cssWidth * 0.16 + driftAX,
         cssHeight * 0.30 + driftAY,
         250 * radiusScale,
-        "rgba(76,118,179,0.030)",
-        "rgba(69,90,151,0.014)",
+        "rgba(76,118,179,0.070)",
+        "rgba(69,90,151,0.032)",
       );
 
       drawNebula(
         cssWidth * 0.86 + driftBX,
         cssHeight * 0.23 + driftBY,
         225 * radiusScale,
-        "rgba(122,91,177,0.027)",
-        "rgba(87,71,142,0.012)",
+        "rgba(122,91,177,0.064)",
+        "rgba(87,71,142,0.029)",
       );
 
       drawNebula(
         cssWidth * 0.50 + driftCX,
         cssHeight * 0.68 + driftCY,
         235 * radiusScale,
-        "rgba(70,143,116,0.020)",
-        "rgba(54,105,88,0.009)",
+        "rgba(70,143,116,0.052)",
+        "rgba(54,105,88,0.024)",
       );
 
       ctx.restore();
@@ -390,7 +390,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
           Math.min(0.88, s.base + tw),
         );
         const radius = s.hero
-          ? s.r * (reduceMotion ? 1 : 1 + Math.max(0, wave) * 0.18)
+          ? s.r * (reduceMotion ? 1 : 1 + Math.max(0, wave) * 0.34)
           : s.r;
 
         ctx.beginPath();
@@ -412,8 +412,8 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
           const flare = (opacity - 0.58) / 0.30;
           ctx.save();
           ctx.strokeStyle = s.gold
-            ? `rgba(232,213,163,${flare * 0.14})`
-            : `rgba(199,217,247,${flare * 0.12})`;
+            ? `rgba(232,213,163,${flare * 0.24})`
+            : `rgba(199,217,247,${flare * 0.20})`;
           ctx.lineWidth = 0.45;
           ctx.beginPath();
           ctx.moveTo(x - 4.5, y);
@@ -429,7 +429,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       // compete with navigation.
       drawSignalStreak(
         time,
-        23000,
+        14000,
         0,
         0.08,
         0.34,
@@ -439,7 +439,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       );
       drawSignalStreak(
         time,
-        31000,
+        19000,
         11700,
         0.70,
         0.58,
@@ -459,7 +459,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       );
       depth.addColorStop(0, "transparent");
       depth.addColorStop(0.72, "rgba(2,3,8,0.015)");
-      depth.addColorStop(1, "rgba(2,3,8,0.11)");
+      depth.addColorStop(1, "rgba(2,3,8,0.075)");
       ctx.fillStyle = depth;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
     }

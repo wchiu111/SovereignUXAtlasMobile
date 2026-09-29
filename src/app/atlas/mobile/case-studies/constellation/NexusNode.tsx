@@ -13,14 +13,14 @@ export default function NexusNode({ op }: { op: number }) {
         <circle
           r={118}
           fill={T.identityGold}
-          opacity={0.010}
-          style={{ filter: "blur(5px)" }}
+          opacity={0.030}
+          style={{ filter: "blur(8px)" }}
         />
         <circle
           r={82}
           fill={T.identityGold}
-          opacity={0.018}
-          style={{ filter: "blur(2.5px)" }}
+          opacity={0.048}
+          style={{ filter: "blur(4px)" }}
         />
       </g>
 
@@ -40,7 +40,7 @@ export default function NexusNode({ op }: { op: number }) {
           fill={T.identityGold}
           style={{
             filter:
-              "drop-shadow(0 0 5px rgba(232,200,109,0.46)) drop-shadow(0 0 13px rgba(232,200,109,0.14))",
+              "drop-shadow(0 0 8px rgba(232,200,109,0.64)) drop-shadow(0 0 20px rgba(232,200,109,0.22))",
           }}
         />
       </g>

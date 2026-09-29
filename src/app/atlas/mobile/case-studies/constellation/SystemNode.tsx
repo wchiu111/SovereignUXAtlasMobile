@@ -111,13 +111,13 @@ export default function SystemNode({
         <circle
           r={outerR}
           fill={sys.color}
-          opacity={awakened ? 0.08 : 0.032}
+          opacity={awakened ? 0.10 : 0.055}
           style={{ transition: FADE }}
         />
         <circle
           r={atmoR}
           fill={sys.color}
-          opacity={awakened ? 0.18 : 0.082}
+          opacity={awakened ? 0.20 : 0.125}
           style={{ transition: FADE }}
         />
       </g>
@@ -135,7 +135,7 @@ export default function SystemNode({
           fill="none"
           stroke={sys.color}
           strokeWidth={0.5}
-          opacity={awakened ? 0.32 : 0.13}
+          opacity={awakened ? 0.34 : 0.18}
           style={{ transition: FADE }}
         />
         <circle
@@ -143,7 +143,7 @@ export default function SystemNode({
           fill="none"
           stroke={sys.color}
           strokeWidth={0.3}
-          opacity={awakened ? 0.18 : 0.07}
+          opacity={awakened ? 0.20 : 0.10}
           style={{ transition: FADE }}
         />
       </g>
@@ -162,7 +162,7 @@ export default function SystemNode({
           opacity={awakened ? 1 : 0.88}
           style={{
             transition: FADE,
-            filter: `drop-shadow(0 0 5px ${sys.color}55)`,
+            filter: `drop-shadow(0 0 7px ${sys.color}88) drop-shadow(0 0 16px ${sys.color}26)`,
           }}
         />
       </g>

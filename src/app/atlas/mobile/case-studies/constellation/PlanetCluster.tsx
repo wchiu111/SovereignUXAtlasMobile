@@ -6,9 +6,9 @@ const SYSTEM_VISUAL_SCALE = 1.18;
 const PLANET_LABEL_SIZE = 8.5;
 
 const SATELLITE_BASE_DURATION: Record<string, number> = {
-  "case-studies": 16.8,
-  experiments: 13.8,
-  frameworks: 18.4,
+  "case-studies": 12.8,
+  experiments: 10.8,
+  frameworks: 14.8,
 };
 
 export default function PlanetCluster({
@@ -104,19 +104,19 @@ export default function PlanetCluster({
               <circle
                 r={(awakened ? 9.5 : 5.5) * SYSTEM_VISUAL_SCALE}
                 fill={planetColor}
-                opacity={dimmed ? 0.03 : awakened ? 0.16 : 0.07}
+                opacity={dimmed ? 0.03 : awakened ? 0.18 : 0.11}
                 style={{
                   transition: FADE,
-                  filter: `drop-shadow(0 0 4px ${planetColor}2E)`,
+                  filter: `drop-shadow(0 0 6px ${planetColor}44)`,
                 }}
               />
               <circle
                 r={(awakened ? 3 : 1.7) * SYSTEM_VISUAL_SCALE}
                 fill={planetColor}
-                opacity={dimmed ? 0.18 : awakened ? 1 : 0.52}
+                opacity={dimmed ? 0.18 : awakened ? 1 : 0.68}
                 style={{
                   transition: FADE,
-                  filter: `drop-shadow(0 0 3px ${planetColor}66)`,
+                  filter: `drop-shadow(0 0 5px ${planetColor}88)`,
                 }}
               />
             </g>
