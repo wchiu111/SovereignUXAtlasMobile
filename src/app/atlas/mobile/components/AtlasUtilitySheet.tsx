@@ -22,8 +22,8 @@ import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
 type DragOrigin = "handle" | "sheet";
 
-const IDLE_SHEET_HEIGHT = 320;
-const RESULTS_SHEET_HEIGHT = 470;
+const IDLE_SHEET_HEIGHT = 356;
+const RESULTS_SHEET_HEIGHT = 480;
 const HIDDEN_CLEARANCE = 52;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
@@ -122,6 +122,7 @@ export default function AtlasUtilitySheet({
   ) {
     const target = event.target as HTMLElement | null;
     if (
+      origin === "sheet" &&
       target?.closest(
         "input, button, [role='option'], [data-atlas-search-interactive='true']",
       )
@@ -267,7 +268,7 @@ export default function AtlasUtilitySheet({
           top: 0,
           left: "50%",
           width: "min(100%, 430px)",
-          height: `min(${sheetHeight}px, 68dvh)`,
+          height: `min(${sheetHeight}px, calc(100dvh - 12px))`,
           transform: `translate3d(-50%, ${translateY}px, 0)`,
           zIndex: 50,
           boxSizing: "border-box",
@@ -295,33 +296,31 @@ export default function AtlasUtilitySheet({
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: 10,
-            left: "50%",
-            width: 42,
-            height: 2,
-            borderRadius: 999,
-            background: T.identityGold,
-            opacity: open ? 0.28 : 0,
-            transform: "translateX(-50%)",
-            transition: "opacity 180ms ease",
-            pointerEvents: "none",
-            zIndex: 3,
-          }}
-        />
-
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: 24,
-            zIndex: 2,
+            height: 26,
+            zIndex: 3,
             cursor: "n-resize",
             touchAction: "none",
           }}
-        />
+        >
+          <span
+            style={{
+              position: "absolute",
+              top: 10,
+              left: "50%",
+              width: 42,
+              height: 2,
+              borderRadius: 999,
+              background: T.identityGold,
+              opacity: open ? 0.28 : 0,
+              transform: "translateX(-50%)",
+              transition: "opacity 180ms ease",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
 
         <div
           data-atlas-search-interactive="true"

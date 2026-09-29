@@ -152,8 +152,8 @@ export default function MobileAtlas() {
     useState<MobileFrameworkId | null>(null);
   const [returningFrameworksToAtlas, setReturningFrameworksToAtlas] =
     useState(false);
-  const [pendingFrameworkSearchId, setPendingFrameworkSearchId] =
-    useState<FrameworkOverviewId | null>(null);
+  const pendingFrameworkSearchIdRef =
+    useRef<FrameworkOverviewId | null>(null);
 
   const [activeCaseStudyProjectId, setActiveCaseStudyProjectId] =
     useState<MobileCaseStudyProjectId | null>(null);
@@ -163,6 +163,8 @@ export default function MobileAtlas() {
   const [activeExperimentId, setActiveExperimentId] =
     useState<MobileExperimentId>(DEFAULT_MOBILE_EXPERIMENT_ID);
   const [returnExperimentId, setReturnExperimentId] =
+    useState<MobileExperimentId | null>(null);
+  const [initialExperimentSearchId, setInitialExperimentSearchId] =
     useState<MobileExperimentId | null>(null);
   const [returningExperimentsToAtlas, setReturningExperimentsToAtlas] =
     useState(false);
@@ -322,7 +324,7 @@ export default function MobileAtlas() {
       }
 
       if (destination.kind === "frameworks") {
-        setPendingFrameworkSearchId(destination.id);
+        pendingFrameworkSearchIdRef.current = destination.id;
 
         if (destination.id !== "frameworks") {
           const nextFramework = mobileFrameworkFor(destination.id);
@@ -340,7 +342,10 @@ export default function MobileAtlas() {
         setReturningExperimentsToAtlas(false);
         setReturnExperimentId(null);
 
-        if (destination.id !== "experiments") {
+        if (destination.id === "experiments") {
+          setInitialExperimentSearchId(null);
+        } else {
+          setInitialExperimentSearchId(destination.id);
           setActiveExperimentId(destination.id);
         }
 
@@ -636,7 +641,7 @@ export default function MobileAtlas() {
                   setReturnFrameworkId(null);
 
                   const searchTarget =
-                    pendingFrameworkSearchId ?? "frameworks";
+                    pendingFrameworkSearchIdRef.current ?? "frameworks";
 
                   if (searchTarget === "frameworks") {
                     setFrameworkOverviewSelectionId("frameworks");
@@ -651,7 +656,7 @@ export default function MobileAtlas() {
                     setFrameworkOverviewSelectionId(searchTarget);
                   }
 
-                  setPendingFrameworkSearchId(null);
+                  pendingFrameworkSearchIdRef.current = null;
                   setState("frameworks-focus");
                 }}
                 onOverviewExpand={() =>
@@ -694,6 +699,7 @@ export default function MobileAtlas() {
                 onClick={() => {
                   setReturningExperimentsToAtlas(false);
                   setReturnExperimentId(null);
+                  setInitialExperimentSearchId(null);
                   enterExperiments();
                 }}
                 disabled={
@@ -872,6 +878,7 @@ export default function MobileAtlas() {
                   setReturnFrameworkId(null);
                 }}
                 onBack={() => {
+                  pendingFrameworkSearchIdRef.current = null;
                   setReturnFrameworkId(null);
                   setFrameworkOverviewSelectionId("frameworks");
                   setReturningFrameworksToAtlas(true);
@@ -884,13 +891,16 @@ export default function MobileAtlas() {
               <ExperimentsScene
                 state="experiments-focus"
                 activeExperimentId={activeExperimentId}
+                initialExperimentId={initialExperimentSearchId}
                 returnExperimentId={returnExperimentId}
                 viewportUiTarget={viewportUiTarget}
                 onSelectExperiment={(experimentId) => {
+                  setInitialExperimentSearchId(null);
                   setReturnExperimentId(null);
                   setActiveExperimentId(experimentId);
                 }}
                 onExplore={(experimentId) => {
+                  setInitialExperimentSearchId(null);
                   setReturnExperimentId(null);
                   setActiveExperimentId(experimentId);
                   setState("experiment-reading");
@@ -899,6 +909,7 @@ export default function MobileAtlas() {
                   setReturnExperimentId(null);
                 }}
                 onBack={() => {
+                  setInitialExperimentSearchId(null);
                   setReturnExperimentId(null);
                   setReturningExperimentsToAtlas(true);
                   setState("atlas-landing");

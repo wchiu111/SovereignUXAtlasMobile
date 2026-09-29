@@ -9,22 +9,24 @@ export default function useConstellationChoreography<
   parentId,
   motion,
   returnItemId = null,
+  initialItemId = null,
   onCommit,
   onReturnComplete,
 }: {
   parentId: TParentId;
   motion: ConstellationMotionConfig;
   returnItemId?: TItemId | null;
+  initialItemId?: TItemId | null;
   onCommit: (id: TItemId) => void;
   onReturnComplete?: () => void;
 }) {
   type OverviewId = TParentId | TItemId;
 
   const [selectedId, setSelectedId] = useState<OverviewId>(
-    returnItemId ?? parentId,
+    returnItemId ?? initialItemId ?? parentId,
   );
   const [drawerItemId, setDrawerItemId] = useState<OverviewId>(
-    returnItemId ?? parentId,
+    returnItemId ?? initialItemId ?? parentId,
   );
   const [drawerPhase, setDrawerPhase] = useState<
     "open" | "closing" | "opening"

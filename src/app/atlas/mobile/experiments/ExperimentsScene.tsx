@@ -23,6 +23,7 @@ export type ExperimentsSceneState =
 interface ExperimentsSceneProps {
   state: ExperimentsSceneState;
   activeExperimentId?: MobileExperimentId;
+  initialExperimentId?: MobileExperimentId | null;
   returnExperimentId?: MobileExperimentId | null;
   viewportUiTarget?: HTMLElement | null;
   onSelectExperiment?: (id: MobileExperimentId) => void;
@@ -32,6 +33,7 @@ interface ExperimentsSceneProps {
 }
 
 function ExperimentsOverviewMode({
+  initialExperimentId,
   returnExperimentId,
   viewportUiTarget,
   onSelectExperiment,
@@ -39,6 +41,7 @@ function ExperimentsOverviewMode({
   onReturnExperimentComplete,
   onBack,
 }: {
+  initialExperimentId: MobileExperimentId | null;
   returnExperimentId: MobileExperimentId | null;
   viewportUiTarget: HTMLElement | null;
   onSelectExperiment: (id: MobileExperimentId) => void;
@@ -66,6 +69,7 @@ function ExperimentsOverviewMode({
     parentId: EXPERIMENTS_TEMPLATE.parent.id,
     motion: EXPERIMENTS_MOTION,
     returnItemId: returnExperimentId,
+    initialItemId: initialExperimentId,
     onCommit: (id) => {
       onSelectExperiment(id);
       onExplore(id);
@@ -145,6 +149,7 @@ function ExperimentsOverviewMode({
 export default function ExperimentsScene({
   state,
   activeExperimentId = DEFAULT_MOBILE_EXPERIMENT_ID,
+  initialExperimentId = null,
   returnExperimentId = null,
   viewportUiTarget = null,
   onSelectExperiment = () => {},
@@ -166,6 +171,7 @@ export default function ExperimentsScene({
 
   return (
     <ExperimentsOverviewMode
+      initialExperimentId={initialExperimentId}
       returnExperimentId={returnExperimentId}
       viewportUiTarget={viewportUiTarget}
       onSelectExperiment={onSelectExperiment}
