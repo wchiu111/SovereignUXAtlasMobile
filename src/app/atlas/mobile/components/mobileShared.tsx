@@ -120,11 +120,12 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       phase: number;
       spd: number;
       gold: boolean;
+      hero: boolean;
     };
 
-    // Star positions are normalized to the environmental viewport.
-    // The field therefore fills the device without changing the Atlas scene geometry.
-    const stars: Star[] = Array.from({ length: 360 }, () => ({
+    // Stable for the lifetime of the mounted Atlas. The existing field remains
+    // spatially quiet; Pass 2 adds atmosphere around it rather than moving the map.
+    const stars: Star[] = Array.from({ length: 360 }, (_, index) => ({
       nx:    Math.random(),
       ny:    Math.random(),
       r:     Math.pow(Math.random(), 2.8) * 1.5 + 0.18,
@@ -132,20 +133,18 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       phase: Math.random() * Math.PI * 2,
       spd:   Math.random() * 0.0009 + 0.0002,
       gold:  Math.random() < 0.30,
+      hero:  index % 47 === 0,
     }));
 
     let cssWidth = W;
     let cssHeight = H;
     let raf = 0;
-    let t = 0;
 
     function syncCanvasSize() {
       const rect = canvas.getBoundingClientRect();
       cssWidth = Math.max(1, rect.width);
       cssHeight = Math.max(1, rect.height);
 
-      // Keep the canvas crisp without allowing very high DPR devices
-      // to multiply the starfield backing store excessively.
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const pixelWidth = Math.max(1, Math.round(cssWidth * dpr));
       const pixelHeight = Math.max(1, Math.round(cssHeight * dpr));
@@ -155,8 +154,102 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         canvas.height = pixelHeight;
       }
 
-      // Continue drawing in CSS-pixel coordinates.
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawNebula(
+      x: number,
+      y: number,
+      radius: number,
+      inner: string,
+      middle: string,
+    ) {
+      const gradient = ctx.createRadialGradient(
+        x,
+        y,
+        0,
+        x,
+        y,
+        radius,
+      );
+      gradient.addColorStop(0, inner);
+      gradient.addColorStop(0.48, middle);
+      gradient.addColorStop(1, "transparent");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+    }
+
+    function drawSignalStreak(
+      time: number,
+      cycleMs: number,
+      phaseOffset: number,
+      startNX: number,
+      startNY: number,
+      endNX: number,
+      endNY: number,
+      gold: boolean,
+    ) {
+      if (reduceMotion) return;
+
+      const phase =
+        ((time + phaseOffset) % cycleMs) / cycleMs;
+
+      // A signal is present for only a small portion of the cycle.
+      const windowStart = 0.79;
+      const windowEnd = 0.86;
+      if (phase < windowStart || phase > windowEnd) return;
+
+      const local =
+        (phase - windowStart) / (windowEnd - windowStart);
+      const alpha = Math.sin(local * Math.PI) * 0.30;
+
+      const x1 = startNX * cssWidth;
+      const y1 = startNY * cssHeight;
+      const x2 = endNX * cssWidth;
+      const y2 = endNY * cssHeight;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+
+      // Reveal a short moving segment rather than a full static line.
+      const headT = Math.min(1, local * 1.18);
+      const tailT = Math.max(0, headT - 0.22);
+      const sx = x1 + dx * tailT;
+      const sy = y1 + dy * tailT;
+      const ex = x1 + dx * headT;
+      const ey = y1 + dy * headT;
+
+      const lineGradient = ctx.createLinearGradient(
+        sx,
+        sy,
+        ex,
+        ey,
+      );
+      lineGradient.addColorStop(0, "transparent");
+      lineGradient.addColorStop(
+        0.72,
+        gold
+          ? `rgba(232,213,163,${alpha * 0.38})`
+          : `rgba(174,201,239,${alpha * 0.34})`,
+      );
+      lineGradient.addColorStop(
+        1,
+        gold
+          ? `rgba(255,231,166,${alpha})`
+          : `rgba(207,225,255,${alpha})`,
+      );
+
+      ctx.save();
+      ctx.strokeStyle = lineGradient;
+      ctx.lineWidth = 0.8;
+      ctx.shadowBlur = 7;
+      ctx.shadowColor = gold
+        ? `rgba(232,213,163,${alpha * 0.72})`
+        : `rgba(161,194,236,${alpha * 0.62})`;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.restore();
     }
 
     function drawFrame(time: number) {
@@ -164,15 +257,72 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       ctx.fillStyle = T.bg;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-      // Map the original atmosphere anchors proportionally into the
-      // environmental viewport. At 390×844 these resolve exactly to
-      // the original authored values.
       const scaleX = cssWidth / W;
       const scaleY = cssHeight / H;
       const radiusScale = Math.min(scaleX, scaleY);
+      const seconds = time * 0.001;
 
+      /*
+       * Pass 2 ambient depth.
+       *
+       * These fields drift only a few viewport pixels over long periods.
+       * They create parallax/depth without moving any authored constellation
+       * geometry or labels.
+       */
+      const driftAX = reduceMotion
+        ? 0
+        : Math.sin(seconds / 12.8) * 14 * scaleX;
+      const driftAY = reduceMotion
+        ? 0
+        : Math.cos(seconds / 16.4) * 9 * scaleY;
+      const driftBX = reduceMotion
+        ? 0
+        : Math.cos(seconds / 15.8) * 18 * scaleX;
+      const driftBY = reduceMotion
+        ? 0
+        : Math.sin(seconds / 19.5) * 11 * scaleY;
+      const driftCX = reduceMotion
+        ? 0
+        : Math.sin(seconds / 18.5) * 10 * scaleX;
+      const driftCY = reduceMotion
+        ? 0
+        : Math.cos(seconds / 14.2) * 13 * scaleY;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+
+      drawNebula(
+        cssWidth * 0.16 + driftAX,
+        cssHeight * 0.30 + driftAY,
+        250 * radiusScale,
+        "rgba(76,118,179,0.030)",
+        "rgba(69,90,151,0.014)",
+      );
+
+      drawNebula(
+        cssWidth * 0.86 + driftBX,
+        cssHeight * 0.23 + driftBY,
+        225 * radiusScale,
+        "rgba(122,91,177,0.027)",
+        "rgba(87,71,142,0.012)",
+      );
+
+      drawNebula(
+        cssWidth * 0.50 + driftCX,
+        cssHeight * 0.68 + driftCY,
+        235 * radiusScale,
+        "rgba(70,143,116,0.020)",
+        "rgba(54,105,88,0.009)",
+      );
+
+      ctx.restore();
+
+      // Existing Atlas atmosphere, now given a restrained breathing envelope.
       const nexusX = NEXUS.x * scaleX;
       const nexusY = NEXUS.y * scaleY;
+      const nexusBreath = reduceMotion
+        ? 1
+        : 0.88 + Math.sin(seconds / 4.8) * 0.12;
       const ng = ctx.createRadialGradient(
         nexusX,
         nexusY,
@@ -181,10 +331,19 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         nexusY,
         310 * radiusScale,
       );
-      ng.addColorStop(0,    "rgba(138,174,200,0.042)");
-      ng.addColorStop(0.30, "rgba(166,139,212,0.028)");
-      ng.addColorStop(0.60, "rgba(106,184,138,0.014)");
-      ng.addColorStop(1,    "transparent");
+      ng.addColorStop(
+        0,
+        `rgba(138,174,200,${0.038 + nexusBreath * 0.008})`,
+      );
+      ng.addColorStop(
+        0.30,
+        `rgba(166,139,212,${0.024 + nexusBreath * 0.006})`,
+      );
+      ng.addColorStop(
+        0.60,
+        `rgba(106,184,138,${0.012 + nexusBreath * 0.004})`,
+      );
+      ng.addColorStop(1, "transparent");
       ctx.fillStyle = ng;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
 
@@ -198,7 +357,7 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         frameworkY,
         190 * radiusScale,
       );
-      fg.addColorStop(0, "rgba(106,184,138,0.032)");
+      fg.addColorStop(0, "rgba(106,184,138,0.030)");
       fg.addColorStop(1, "transparent");
       ctx.fillStyle = fg;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
@@ -213,23 +372,32 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
         upperY,
         200 * radiusScale,
       );
-      ug.addColorStop(0,   "rgba(166,139,212,0.022)");
-      ug.addColorStop(0.5, "rgba(138,174,200,0.014)");
-      ug.addColorStop(1,   "transparent");
+      ug.addColorStop(0, "rgba(166,139,212,0.020)");
+      ug.addColorStop(0.5, "rgba(138,174,200,0.013)");
+      ug.addColorStop(1, "transparent");
       ctx.fillStyle = ug;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
 
+      // Star field: same spatial pattern, but with slightly richer depth and
+      // a few restrained "hero" stars that resolve briefly.
       for (const s of stars) {
-        const tw = reduceMotion
+        const wave = reduceMotion
           ? 0
-          : Math.sin(time * s.spd + s.phase) * 0.22;
-        const opacity = Math.max(0.04, Math.min(0.88, s.base + tw));
+          : Math.sin(time * s.spd + s.phase);
+        const tw = wave * 0.22;
+        const opacity = Math.max(
+          0.04,
+          Math.min(0.88, s.base + tw),
+        );
+        const radius = s.hero
+          ? s.r * (reduceMotion ? 1 : 1 + Math.max(0, wave) * 0.18)
+          : s.r;
 
         ctx.beginPath();
         ctx.arc(
           s.nx * cssWidth,
           s.ny * cssHeight,
-          s.r,
+          radius,
           0,
           Math.PI * 2,
         );
@@ -237,7 +405,63 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
           ? `rgba(232,213,163,${opacity})`
           : `rgba(210,218,232,${opacity * 0.72})`;
         ctx.fill();
+
+        if (s.hero && opacity > 0.58) {
+          const x = s.nx * cssWidth;
+          const y = s.ny * cssHeight;
+          const flare = (opacity - 0.58) / 0.30;
+          ctx.save();
+          ctx.strokeStyle = s.gold
+            ? `rgba(232,213,163,${flare * 0.14})`
+            : `rgba(199,217,247,${flare * 0.12})`;
+          ctx.lineWidth = 0.45;
+          ctx.beginPath();
+          ctx.moveTo(x - 4.5, y);
+          ctx.lineTo(x + 4.5, y);
+          ctx.moveTo(x, y - 4.5);
+          ctx.lineTo(x, y + 4.5);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
+
+      // Rare signal events — enough to reward observation, not enough to
+      // compete with navigation.
+      drawSignalStreak(
+        time,
+        23000,
+        0,
+        0.08,
+        0.34,
+        0.34,
+        0.22,
+        true,
+      );
+      drawSignalStreak(
+        time,
+        31000,
+        11700,
+        0.70,
+        0.58,
+        0.92,
+        0.47,
+        false,
+      );
+
+      // Soft depth treatment keeps the edges quieter and the center navigable.
+      const depth = ctx.createRadialGradient(
+        cssWidth * 0.5,
+        cssHeight * 0.46,
+        Math.min(cssWidth, cssHeight) * 0.18,
+        cssWidth * 0.5,
+        cssHeight * 0.46,
+        Math.max(cssWidth, cssHeight) * 0.72,
+      );
+      depth.addColorStop(0, "transparent");
+      depth.addColorStop(0.72, "rgba(2,3,8,0.015)");
+      depth.addColorStop(1, "rgba(2,3,8,0.11)");
+      ctx.fillStyle = depth;
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
     }
 
     function handleResize() {
@@ -255,9 +479,8 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       };
     }
 
-    function draw() {
-      t += 16;
-      drawFrame(t);
+    function draw(time: number) {
+      drawFrame(time);
       raf = requestAnimationFrame(draw);
     }
 

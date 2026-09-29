@@ -6,6 +6,27 @@ import PlanetCluster from "./PlanetCluster";
 const SYSTEM_VISUAL_SCALE = 1.18;
 const SYSTEM_LABEL_SIZE = 10;
 
+const SYSTEM_MOTION = {
+  "case-studies": {
+    atmosphere: 6.4,
+    rings: 7.2,
+    core: 6.8,
+    delay: -1.1,
+  },
+  experiments: {
+    atmosphere: 5.2,
+    rings: 6.1,
+    core: 5.7,
+    delay: -3.0,
+  },
+  frameworks: {
+    atmosphere: 7.1,
+    rings: 8.0,
+    core: 7.6,
+    delay: -2.0,
+  },
+} as const;
+
 export default function SystemNode({
   sys,
   cx,
@@ -41,6 +62,12 @@ export default function SystemNode({
   const resolvedBaseScale =
     baseLayoutScale ?? authoredTopology?.scale ?? 1;
 
+  const motion =
+    SYSTEM_MOTION[sys.id as keyof typeof SYSTEM_MOTION] ??
+    SYSTEM_MOTION["case-studies"];
+  const ambientRunning =
+    !awakened && !dimmed && !resolveTargets;
+
   const atmoR =
     (awakened ? BASE_R * 1.45 : BASE_R * 0.82) *
     SYSTEM_VISUAL_SCALE;
@@ -70,42 +97,75 @@ export default function SystemNode({
         baseLayoutScale={resolvedBaseScale}
         resolveTargets={resolveTargets}
         resolveT={resolveT}
+        motionKey={sys.id}
       />
 
-      <circle
-        r={outerR}
-        fill={sys.color}
-        opacity={awakened ? 0.08 : 0.032}
-        style={{ transition: FADE }}
-      />
-      <circle
-        r={atmoR}
-        fill={sys.color}
-        opacity={awakened ? 0.18 : 0.082}
-        style={{ transition: FADE }}
-      />
-      <circle
-        r={28 * SYSTEM_VISUAL_SCALE}
-        fill="none"
-        stroke={sys.color}
-        strokeWidth={0.5}
-        opacity={awakened ? 0.32 : 0.13}
-        style={{ transition: FADE }}
-      />
-      <circle
-        r={42 * SYSTEM_VISUAL_SCALE}
-        fill="none"
-        stroke={sys.color}
-        strokeWidth={0.3}
-        opacity={awakened ? 0.18 : 0.07}
-        style={{ transition: FADE }}
-      />
-      <circle
-        r={coreR}
-        fill={sys.color}
-        opacity={awakened ? 1 : 0.88}
-        style={{ transition: FADE }}
-      />
+      <g
+        className="atlas-landing-system-atmosphere"
+        style={{
+          animationDuration: `${motion.atmosphere}s`,
+          animationDelay: `${motion.delay}s`,
+          animationPlayState: ambientRunning ? "running" : "paused",
+        }}
+      >
+        <circle
+          r={outerR}
+          fill={sys.color}
+          opacity={awakened ? 0.08 : 0.032}
+          style={{ transition: FADE }}
+        />
+        <circle
+          r={atmoR}
+          fill={sys.color}
+          opacity={awakened ? 0.18 : 0.082}
+          style={{ transition: FADE }}
+        />
+      </g>
+
+      <g
+        className="atlas-landing-system-rings"
+        style={{
+          animationDuration: `${motion.rings}s`,
+          animationDelay: `${motion.delay - 0.9}s`,
+          animationPlayState: ambientRunning ? "running" : "paused",
+        }}
+      >
+        <circle
+          r={28 * SYSTEM_VISUAL_SCALE}
+          fill="none"
+          stroke={sys.color}
+          strokeWidth={0.5}
+          opacity={awakened ? 0.32 : 0.13}
+          style={{ transition: FADE }}
+        />
+        <circle
+          r={42 * SYSTEM_VISUAL_SCALE}
+          fill="none"
+          stroke={sys.color}
+          strokeWidth={0.3}
+          opacity={awakened ? 0.18 : 0.07}
+          style={{ transition: FADE }}
+        />
+      </g>
+
+      <g
+        className="atlas-landing-system-core"
+        style={{
+          animationDuration: `${motion.core}s`,
+          animationDelay: `${motion.delay - 1.7}s`,
+          animationPlayState: ambientRunning ? "running" : "paused",
+        }}
+      >
+        <circle
+          r={coreR}
+          fill={sys.color}
+          opacity={awakened ? 1 : 0.88}
+          style={{
+            transition: FADE,
+            filter: `drop-shadow(0 0 5px ${sys.color}55)`,
+          }}
+        />
+      </g>
 
       {showLabel && (
         <text

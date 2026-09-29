@@ -5,6 +5,12 @@ import { lerp } from "../caseStudyGeometry";
 const SYSTEM_VISUAL_SCALE = 1.18;
 const PLANET_LABEL_SIZE = 8.5;
 
+const SATELLITE_BASE_DURATION: Record<string, number> = {
+  "case-studies": 16.8,
+  experiments: 13.8,
+  frameworks: 18.4,
+};
+
 export default function PlanetCluster({
   planets,
   orbitR,
@@ -16,6 +22,7 @@ export default function PlanetCluster({
   baseLayoutScale = 1,
   resolveTargets,
   resolveT = 0,
+  motionKey = "case-studies",
 }: {
   planets: Planet[];
   orbitR: number;
@@ -27,9 +34,15 @@ export default function PlanetCluster({
   baseLayoutScale?: number;
   resolveTargets?: readonly { x: number; y: number }[];
   resolveT?: number;
+  motionKey?: string;
 }) {
   const ringScale  = orbitR / 36;
   const showLabels = awakened && orbitR >= 44 && !resolveTargets && !baseLayoutTargets;
+  const ambientRunning = !awakened && !dimmed && !resolveTargets;
+  const baseMotionDuration =
+    SATELLITE_BASE_DURATION[motionKey] ??
+    SATELLITE_BASE_DURATION["case-studies"];
+
   return (
     <g>
       {!baseLayoutTargets && (
@@ -59,12 +72,19 @@ export default function PlanetCluster({
         const lpx = target ? lerp(orbitX, target.x, resolveT) : orbitX;
         const lpy = target ? lerp(orbitY, target.y, resolveT) : orbitY;
 
-        // Label direction follows the actual node vector when using authored geometry.
         const vectorLength = Math.max(1, Math.hypot(lpx, lpy));
         const ldx = authoredBase ? lpx / vectorLength : Math.cos(rad);
         const ldy = authoredBase ? lpy / vectorLength : Math.sin(rad);
         const ta  = ldx > 0.28 ? "start" : ldx < -0.28 ? "end" : "middle";
         const db  = ldy > 0.28 ? "hanging" : ldy < -0.28 ? "auto" : "middle";
+
+        const driftClass =
+          `atlas-landing-satellite-drift atlas-landing-satellite-drift-${
+            ["a", "b", "c", "d"][i % 4]
+          }`;
+        const duration = baseMotionDuration + i * 1.85;
+        const delay = -(i * 2.6 + (motionKey === "experiments" ? 1.4 : 0));
+
         return (
           <g
             key={i}
@@ -73,14 +93,46 @@ export default function PlanetCluster({
               transition: resolveTargets ? "none" : ANIM,
             }}
           >
-            <circle r={(awakened ? 9.5 : 5.5) * SYSTEM_VISUAL_SCALE} fill={planetColor}
-              opacity={dimmed ? 0.03 : awakened ? 0.16 : 0.07} style={{ transition: FADE }} />
-            <circle r={(awakened ? 3 : 1.7) * SYSTEM_VISUAL_SCALE} fill={planetColor}
-              opacity={dimmed ? 0.18 : awakened ? 1 : 0.52} style={{ transition: FADE }} />
+            <g
+              className={driftClass}
+              style={{
+                animationDuration: `${duration}s`,
+                animationDelay: `${delay}s`,
+                animationPlayState: ambientRunning ? "running" : "paused",
+              }}
+            >
+              <circle
+                r={(awakened ? 9.5 : 5.5) * SYSTEM_VISUAL_SCALE}
+                fill={planetColor}
+                opacity={dimmed ? 0.03 : awakened ? 0.16 : 0.07}
+                style={{
+                  transition: FADE,
+                  filter: `drop-shadow(0 0 4px ${planetColor}2E)`,
+                }}
+              />
+              <circle
+                r={(awakened ? 3 : 1.7) * SYSTEM_VISUAL_SCALE}
+                fill={planetColor}
+                opacity={dimmed ? 0.18 : awakened ? 1 : 0.52}
+                style={{
+                  transition: FADE,
+                  filter: `drop-shadow(0 0 3px ${planetColor}66)`,
+                }}
+              />
+            </g>
+
             {showLabels && (
-              <text x={ldx * 11} y={ldy * 11}
-                textAnchor={ta} dominantBaseline={db}
-                fontFamily={T.mono} fontSize={PLANET_LABEL_SIZE} letterSpacing="0.08em" fill={planetColor} opacity={0.88}>
+              <text
+                x={ldx * 11}
+                y={ldy * 11}
+                textAnchor={ta}
+                dominantBaseline={db}
+                fontFamily={T.mono}
+                fontSize={PLANET_LABEL_SIZE}
+                letterSpacing="0.08em"
+                fill={planetColor}
+                opacity={0.88}
+              >
                 {p.label}
               </text>
             )}
