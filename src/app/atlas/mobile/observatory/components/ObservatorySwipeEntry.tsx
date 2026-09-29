@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -36,6 +37,16 @@ export default function ObservatorySwipeEntry({
   const pointerIdRef = useRef<number | null>(null);
   const movedRef = useRef(false);
   const suppressClickRef = useRef(false);
+
+  useEffect(() => {
+    if (visible) return;
+
+    pointerIdRef.current = null;
+    movedRef.current = false;
+    suppressClickRef.current = false;
+    setDragging(false);
+    setProgress(0);
+  }, [visible]);
 
   const reset = () => {
     pointerIdRef.current = null;
