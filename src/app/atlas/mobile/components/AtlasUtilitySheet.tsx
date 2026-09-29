@@ -1,49 +1,47 @@
 /**
- * AtlasUtilitySheet — top-anchored mobile utility layer.
+ * AtlasUtilitySheet — search-only mobile utility layer.
  *
- * Pass 2.5:
- * - Activator is the thicker horizontal line at the utility-layer boundary.
- * - The layer reveals from above the viewport and moves downward with the finger.
- * - No lower bulge, secondary handle, or footer protrusion.
- * - Handle, backdrop, and sheet are positioned relative to the Atlas viewport.
- *
- * Phase 3:
- * - Search is the only active utility destination.
- * - Search opens a local placeholder surface.
- * - Other utility destinations remain visibly present but inactive.
- *
- * Pass 3.2:
- * - Drag response is tuned for short mobile pulls.
- * - The entry activator fades/hides once the layer begins opening.
+ * Consolidated Search pass:
+ * - Pulling the top handle reveals Search immediately.
+ * - The previous utility-menu destinations are removed.
+ * - Empty search shows guided prompts.
+ * - Query state expands the sheet for up to four results.
+ * - The backdrop lives at the runtime-viewport level so the entire Atlas,
+ *   including ENTER OBSERVATORY / gesture symbol / SWIPE UP, recedes together.
  */
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { T } from "./mobileShared";
-import AtlasSearchPlaceholder from "./AtlasSearchPlaceholder";
+import AtlasMobileSearch from "./AtlasMobileSearch";
+import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
 type DragOrigin = "handle" | "sheet";
-type UtilityView = "menu" | "search";
 
-const SHEET_HEIGHT = 372;
-const HIDDEN_CLEARANCE = 48;
+const IDLE_SHEET_HEIGHT = 320;
+const RESULTS_SHEET_HEIGHT = 470;
+const HIDDEN_CLEARANCE = 52;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
 const TAP_SLOP = 8;
+const NAVIGATION_HANDOFF_DELAY = 250;
 
-const items = [
-  { id: "search", label: "SEARCH", glyph: "⌕", active: true },
-  { id: "observatory", label: "OBSERVATORY", glyph: "◉", active: false },
-  { id: "journey", label: "JOURNEY", glyph: "⌁", active: false },
-  { id: "about", label: "ABOUT WILSON", glyph: "○", active: false },
-  { id: "philosophy", label: "PHILOSOPHY", glyph: "◇", active: false },
-] as const;
-
-export default function AtlasUtilitySheet() {
+export default function AtlasUtilitySheet({
+  onNavigate,
+}: {
+  onNavigate: (destination: AtlasMobileSearchDestination) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [view, setView] = useState<UtilityView>("menu");
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchResetKey, setSearchResetKey] = useState(0);
 
+  const navigationTimerRef = useRef<number | null>(null);
   const drag = useRef<{
     origin: DragOrigin;
     startY: number;
@@ -52,41 +50,84 @@ export default function AtlasUtilitySheet() {
     pointerId: number;
   } | null>(null);
 
+  const sheetHeight = searchExpanded
+    ? RESULTS_SHEET_HEIGHT
+    : IDLE_SHEET_HEIGHT;
   const activeProgress = dragging ? progress : open ? 1 : 0;
   const translateY =
-    -(SHEET_HEIGHT + HIDDEN_CLEARANCE) +
-    (SHEET_HEIGHT + HIDDEN_CLEARANCE) * activeProgress;
+    -(sheetHeight + HIDDEN_CLEARANCE) +
+    (sheetHeight + HIDDEN_CLEARANCE) * activeProgress;
+  const overlayActive = activeProgress > 0.02;
 
   useEffect(() => {
     if (!dragging) setProgress(open ? 1 : 0);
   }, [open, dragging]);
 
   useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
+    return () => {
+      if (navigationTimerRef.current !== null) {
+        window.clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, []);
 
-      if (view === "search") {
-        setView("menu");
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || !open) return;
+
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement instanceof HTMLElement &&
+          activeElement.isContentEditable
+      ) {
+        activeElement.blur();
         return;
       }
 
-      if (open) setOpen(false);
+      closeLayer();
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, view]);
+  }, [open]);
 
   function closeLayer() {
     setOpen(false);
-    setView("menu");
+    setSearchExpanded(false);
+    setSearchResetKey((value) => value + 1);
+  }
+
+  function handleNavigate(
+    destination: AtlasMobileSearchDestination,
+  ) {
+    if (navigationTimerRef.current !== null) {
+      window.clearTimeout(navigationTimerRef.current);
+    }
+
+    setOpen(false);
+    setSearchExpanded(false);
+
+    navigationTimerRef.current = window.setTimeout(() => {
+      setSearchResetKey((value) => value + 1);
+      onNavigate(destination);
+      navigationTimerRef.current = null;
+    }, NAVIGATION_HANDOFF_DELAY);
   }
 
   function beginDrag(
     event: React.PointerEvent<HTMLElement>,
     origin: DragOrigin,
   ) {
-    if (view === "search") return;
+    const target = event.target as HTMLElement | null;
+    if (
+      target?.closest(
+        "input, button, [role='option'], [data-atlas-search-interactive='true']",
+      )
+    ) {
+      return;
+    }
 
     event.currentTarget.setPointerCapture?.(event.pointerId);
     drag.current = {
@@ -123,6 +164,10 @@ export default function AtlasUtilitySheet() {
       setOpen(true);
     } else {
       setOpen(progress >= OPEN_THRESHOLD);
+      if (progress < OPEN_THRESHOLD) {
+        setSearchExpanded(false);
+        setSearchResetKey((value) => value + 1);
+      }
     }
 
     drag.current = null;
@@ -135,13 +180,11 @@ export default function AtlasUtilitySheet() {
     setProgress(open ? 1 : 0);
   }
 
-  const overlayActive = activeProgress > 0.02;
-
-  return (
+  const content = (
     <>
       <button
         type="button"
-        aria-label={open ? "Close Atlas utility layer" : "Open Atlas utility layer"}
+        aria-label={open ? "Close Atlas search" : "Open Atlas search"}
         aria-expanded={open}
         onPointerDown={(event) => beginDrag(event, "handle")}
         onPointerMove={updateDrag}
@@ -165,7 +208,9 @@ export default function AtlasUtilitySheet() {
           cursor: "s-resize",
           touchAction: "none",
           zIndex: 60,
-          transition: dragging ? "opacity 120ms ease" : "opacity 180ms ease",
+          transition: dragging
+            ? "opacity 120ms ease"
+            : "opacity 180ms ease",
         }}
       >
         <span
@@ -187,18 +232,31 @@ export default function AtlasUtilitySheet() {
         style={{
           position: "absolute",
           inset: 0,
-          background: `rgba(2,2,7,${Math.min(0.48, activeProgress * 0.48)})`,
-          backdropFilter: overlayActive ? `blur(${activeProgress * 3}px)` : "none",
-          WebkitBackdropFilter: overlayActive ? `blur(${activeProgress * 3}px)` : "none",
+          zIndex: 40,
+          background: `rgba(2,2,7,${Math.min(
+            0.42,
+            activeProgress * 0.42,
+          )})`,
+          backdropFilter: overlayActive
+            ? `blur(${activeProgress * 6}px) brightness(${
+                1 - activeProgress * 0.32
+              }) saturate(${1 - activeProgress * 0.16})`
+            : "none",
+          WebkitBackdropFilter: overlayActive
+            ? `blur(${activeProgress * 6}px) brightness(${
+                1 - activeProgress * 0.32
+              }) saturate(${1 - activeProgress * 0.16})`
+            : "none",
           opacity: overlayActive ? 1 : 0,
           pointerEvents: overlayActive ? "auto" : "none",
-          transition: dragging ? "none" : "opacity 220ms ease",
-          zIndex: 40,
+          transition: dragging
+            ? "none"
+            : "opacity 220ms ease, backdrop-filter 220ms ease",
         }}
       />
 
       <section
-        aria-label="Atlas utility layer"
+        aria-label="Search the Sovereign Atlas"
         aria-hidden={!open && !dragging}
         onPointerDown={(event) => beginDrag(event, "sheet")}
         onPointerMove={updateDrag}
@@ -207,105 +265,92 @@ export default function AtlasUtilitySheet() {
         style={{
           position: "absolute",
           top: 0,
-          left: 0,
-          width: "100%",
-          height: SHEET_HEIGHT,
-          transform: `translate3d(0, ${translateY}px, 0)`,
+          left: "50%",
+          width: "min(100%, 430px)",
+          height: `min(${sheetHeight}px, 68dvh)`,
+          transform: `translate3d(-50%, ${translateY}px, 0)`,
           zIndex: 50,
           boxSizing: "border-box",
-          border: "0.5px solid rgba(232,213,163,0.14)",
+          border: "0.5px solid rgba(232,213,163,0.16)",
           borderTop: "none",
-          borderRadius: "0 0 30px 30px",
+          borderRadius: "0 0 28px 28px",
           background:
-            "linear-gradient(180deg, rgba(14,15,20,0.985) 0%, rgba(8,9,13,0.992) 100%)",
-          boxShadow:
-            activeProgress > 0.02
-              ? `0 22px 70px rgba(0,0,0,${0.16 + activeProgress * 0.42})`
-              : "none",
-          backdropFilter: "blur(28px)",
-          WebkitBackdropFilter: "blur(28px)",
+            "linear-gradient(180deg, rgba(12,13,19,0.985) 0%, rgba(7,8,13,0.994) 100%)",
+          boxShadow: overlayActive
+            ? `0 24px 74px rgba(0,0,0,${
+                0.20 + activeProgress * 0.40
+              })`
+            : "none",
+          backdropFilter: "blur(30px)",
+          WebkitBackdropFilter: "blur(30px)",
           pointerEvents: overlayActive ? "auto" : "none",
-          touchAction: view === "search" ? "auto" : "none",
+          touchAction: "pan-y",
           transition: dragging
             ? "none"
-            : "transform 420ms cubic-bezier(0.16,1,0.3,1), box-shadow 220ms ease",
+            : "transform 420ms cubic-bezier(0.16,1,0.3,1), height 260ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms ease",
           overflow: "hidden",
         }}
       >
-        {view === "search" ? (
-          <AtlasSearchPlaceholder
-            onBack={() => setView("menu")}
-            onClose={closeLayer}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 10,
+            left: "50%",
+            width: 42,
+            height: 2,
+            borderRadius: 999,
+            background: T.identityGold,
+            opacity: open ? 0.28 : 0,
+            transform: "translateX(-50%)",
+            transition: "opacity 180ms ease",
+            pointerEvents: "none",
+            zIndex: 3,
+          }}
+        />
+
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 24,
+            zIndex: 2,
+            cursor: "n-resize",
+            touchAction: "none",
+          }}
+        />
+
+        <div
+          data-atlas-search-interactive="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+          }}
+        >
+          <AtlasMobileSearch
+            key={searchResetKey}
+            onNavigate={handleNavigate}
+            onExpandedChange={setSearchExpanded}
           />
-        ) : (
-          <div style={{ padding: "28px 26px 24px" }}>
-
-            <div style={{ borderTop: "0.5px solid rgba(232,213,163,0.07)" }}>
-              {items.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  disabled={!item.active}
-                  onClick={() => item.id === "search" && setView("search")}
-                  style={{
-                    width: "100%",
-                    minHeight: 58,
-                    display: "grid",
-                    gridTemplateColumns: "30px 1fr 18px",
-                    gap: 12,
-                    alignItems: "center",
-                    border: "none",
-                    borderBottom: "0.5px solid rgba(232,213,163,0.07)",
-                    background: "transparent",
-                    color: item.active ? T.accentGold : T.body,
-                    opacity: item.active ? 1 : 0.72,
-                    padding: 0,
-                    textAlign: "left",
-                    cursor: item.active ? "pointer" : "default",
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: T.serif,
-                      fontSize: item.id === "search" ? 22 : 17,
-                    }}
-                  >
-                    {item.glyph}
-                  </span>
-
-                  <span
-                    style={{
-                      fontFamily: T.mono,
-                      fontSize: item.active ? 10 : 9,
-                      letterSpacing: "0.20em",
-                    }}
-                  >
-                    {item.label}
-                  </span>
-
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      fontFamily: T.mono,
-                      fontSize: 12,
-                      opacity: item.active ? 0.30 : 0,
-                      textAlign: "right",
-                    }}
-                  >
-                    ›
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </section>
     </>
   );
+
+  if (typeof document !== "undefined") {
+    const runtimeViewport =
+      document.querySelector<HTMLElement>(
+        ".mobile-atlas-runtime-viewport",
+      );
+
+    if (runtimeViewport) {
+      return createPortal(content, runtimeViewport);
+    }
+  }
+
+  return content;
 }

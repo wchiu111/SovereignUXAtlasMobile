@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 /**
  * LandingScene — atlas-landing | system-awakened | system-overview
@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 
 import { T, ANIM, FADE, W, H, NEXUS, EX_POS, FW_POS, ORBIT_R, SYSTEMS } from "../components/mobileShared";
 import AtlasUtilitySheet from "../components/AtlasUtilitySheet";
+import type { AtlasMobileSearchDestination } from "../components/atlasMobileSearchIndex";
 import {
   CASE_STUDY_COLORS,
   CASE_STUDY_FOCUS_ITEMS,
@@ -74,6 +75,7 @@ interface LandingSceneProps {
   onReturnProjectComplete?: () => void;
   returningFromFrameworks?: boolean;
   onFrameworkReturnComplete?: () => void;
+  onSearchNavigate: (destination: AtlasMobileSearchDestination) => void;
   viewportUiTarget?: HTMLElement | null;
 }
 
@@ -89,9 +91,12 @@ export default function LandingScene({
   onReturnProjectComplete,
   returningFromFrameworks = false,
   onFrameworkReturnComplete,
+  onSearchNavigate,
   viewportUiTarget = null,
 }: LandingSceneProps) {
   const [activeFocusIndex, setActiveFocusIndex] = useState(0);
+  const [pendingSearchCaseStudyId, setPendingSearchCaseStudyId] =
+    useState<(typeof CASE_STUDY_FOCUS_ITEMS)[number]["id"] | null>(null);
   const {
     selectedCaseStudyId,
     drawerPhase,
@@ -185,6 +190,45 @@ export default function LandingScene({
     onEnterComplete: onSelectFrameworks,
     onReturnComplete: onFrameworkReturnComplete,
   });
+
+  useEffect(() => {
+    if (state !== "system-awakened" || !pendingSearchCaseStudyId) {
+      return;
+    }
+
+    if (pendingSearchCaseStudyId === "case-studies") {
+      setPendingSearchCaseStudyId(null);
+      return;
+    }
+
+    const targetId = pendingSearchCaseStudyId;
+    const frame = requestAnimationFrame(() => {
+      selectCaseStudyOverviewItem(targetId);
+      setPendingSearchCaseStudyId(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    pendingSearchCaseStudyId,
+    selectCaseStudyOverviewItem,
+    state,
+  ]);
+
+  function handleSearchNavigate(
+    destination: AtlasMobileSearchDestination,
+  ) {
+    onSearchNavigate(destination);
+
+    if (destination.kind === "case-studies") {
+      setPendingSearchCaseStudyId(destination.id);
+      enterCaseStudies();
+      return;
+    }
+
+    if (destination.kind === "frameworks") {
+      enterFrameworks();
+    }
+  }
 
   const csState = CS_FOCUS[state];
   const ctxOp = CTX_OP[state];
@@ -906,7 +950,9 @@ export default function LandingScene({
         </div>
       )}
       {state === "system-overview" && <CaseStudiesOverviewSurface item={CASE_STUDY_FOCUS_ITEMS[activeFocusIndex]} />}
-      {state === "atlas-landing" && <AtlasUtilitySheet />}
+      {state === "atlas-landing" && (
+        <AtlasUtilitySheet onNavigate={handleSearchNavigate} />
+      )}
         </>
       )}
     </>

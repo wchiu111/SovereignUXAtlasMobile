@@ -28,11 +28,13 @@ import type {
 interface ObservatorySceneProps {
   onReturnToAtlas: () => void;
   presentationScale: number;
+  initialDestinationId?: ObservatoryPanelId | null;
 }
 
 export default function ObservatoryScene({
   onReturnToAtlas,
   presentationScale,
+  initialDestinationId = null,
 }: ObservatorySceneProps) {
   const [selected, setSelected] =
     useState<ObservatoryDestinationId | null>(null);
@@ -59,6 +61,14 @@ export default function ObservatoryScene({
     media.addEventListener?.("change", sync);
     return () => media.removeEventListener?.("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (!initialDestinationId) return;
+
+    setHasInteracted(true);
+    setSelected(initialDestinationId);
+    setActive(initialDestinationId);
+  }, [initialDestinationId]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
