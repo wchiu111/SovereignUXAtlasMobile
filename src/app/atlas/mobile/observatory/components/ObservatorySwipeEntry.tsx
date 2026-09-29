@@ -17,9 +17,15 @@ function clamp01(value: number) {
 
 export default function ObservatorySwipeEntry({
   disabled = false,
+  visible = true,
+  fadeInDurationMs = 520,
+  fadeInDelayMs = 0,
   onCommit,
 }: {
   disabled?: boolean;
+  visible?: boolean;
+  fadeInDurationMs?: number;
+  fadeInDelayMs?: number;
   onCommit: () => void;
 }) {
   const [progress, setProgress] = useState(0);
@@ -145,11 +151,16 @@ export default function ObservatorySwipeEntry({
         borderRadius: 10,
         background: "transparent",
         padding: 0,
-        cursor: disabled ? "default" : "ns-resize",
+        cursor:
+          !visible || disabled ? "default" : "ns-resize",
         touchAction: "none",
-        pointerEvents: "auto",
+        pointerEvents:
+          visible && !disabled ? "auto" : "none",
         WebkitTapHighlightColor: "transparent",
-        opacity: disabled ? 0.35 : 1,
+        opacity: visible ? 1 : 0,
+        transition: visible
+          ? `opacity ${fadeInDurationMs}ms cubic-bezier(0.22,1,0.36,1) ${fadeInDelayMs}ms`
+          : "opacity 180ms ease",
       }}
     >
       <span

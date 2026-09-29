@@ -228,6 +228,18 @@ export default function MobileAtlas() {
     ? 160
     : OBSERVATORY_SPATIAL_TRANSITION_DURATION;
 
+  // Bring Atlas chrome back during the final portion of the Observatory
+  // return transition instead of waiting for the overlay to disappear.
+  const observatoryChromeFadeDuration =
+    observatoryPrefersReducedMotion ? 140 : 520;
+  const observatoryChromeFadeDelay =
+    observatoryPrefersReducedMotion
+      ? 0
+      : Math.max(0, observatoryTransitionDuration - 700);
+  const observatoryChromeVisible =
+    observatoryPhase === "closed" ||
+    observatoryPhase === "exiting";
+
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setObservatoryPrefersReducedMotion(media.matches);
@@ -638,14 +650,13 @@ export default function MobileAtlas() {
             )}
 
             {state === "atlas-landing" &&
-              !observatoryVisible &&
               !experimentEntryInProgress &&
               !returningExperimentsToAtlas && (
                 <ObservatorySwipeEntry
-                  disabled={
-                    experimentEntryInProgress ||
-                    returningExperimentsToAtlas
-                  }
+                  visible={observatoryChromeVisible}
+                  fadeInDurationMs={observatoryChromeFadeDuration}
+                  fadeInDelayMs={observatoryChromeFadeDelay}
+                  disabled={observatoryPhase !== "closed"}
                   onCommit={enterObservatory}
                 />
               )}
@@ -901,14 +912,17 @@ export default function MobileAtlas() {
               zIndex: 20,
               pointerEvents: "none",
               overflow: "hidden",
-              opacity: observatoryVisible
-                ? 0
-                : experimentsViewportUiOpacity,
-              transition: observatoryVisible
-                ? "opacity 180ms ease"
-                : experimentsAtlasTransitionActive
-                ? "opacity 220ms ease"
-                : "none",
+              opacity: observatoryChromeVisible
+                ? experimentsViewportUiOpacity
+                : 0,
+              transition:
+                observatoryPhase === "exiting"
+                  ? `opacity ${observatoryChromeFadeDuration}ms cubic-bezier(0.22,1,0.36,1) ${observatoryChromeFadeDelay}ms`
+                  : observatoryVisible
+                  ? "opacity 180ms ease"
+                  : experimentsAtlasTransitionActive
+                  ? "opacity 220ms ease"
+                  : "none",
             }}
           />
 

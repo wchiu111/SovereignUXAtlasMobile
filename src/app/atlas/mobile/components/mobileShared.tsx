@@ -5,6 +5,7 @@
 
 import { useEffect, type RefObject } from "react";
 import { FRAMEWORK_SYSTEM_PLANETS } from "../frameworks/frameworkTopology";
+import nebulaBackgroundUrl from "../assets/atlas-nebula-background.png";
 
 /**
  * Canonical authored coordinate space for the mobile Atlas.
@@ -78,26 +79,26 @@ export const SYSTEMS: SystemDef[] = [
     orbitPath: "M 395 100 C 300 10 170 60 95 178 C 20 296 -40 540 -60 960",
     planets: [
       { angle: -85, label: "AGENTIC INSURANCE" },
-      { angle:   5, label: "GLOBALITY" },
-      { angle:  95, label: "ORACLE" },
-      { angle: 185, label: "SOVEREIGN ATLAS" },
+      { angle: -155,label: "SOVEREIGN ATLAS" },
+      { angle: -15, label: "GLOBALITY" },
+      { angle:  55, label: "ORACLE" },
     ],
   },
   {
     id: "experiments", label: "EXPERIMENTS", color: T.experiments,
-    orbitPath: "M -5 100 C 90 10 220 60 298 178 C 370 296 430 540 450 960",
+    orbitPath: "M -5 100 C 90 10 220 60 295 178 C 370 296 430 540 450 960",
     planets: [
-      { angle: -95, label: "AI EVALUATION" },
-      { angle: -23, label: "AUTHORITY DRIFT" },
-      { angle:  55, label: "DESIGN PHILOSOPHY" },
-      { angle: 133, label: "GESTALT PRINCIPLES" },
-      { angle: 211, label: "THINK LIKE A DESIGNER" },
+      { angle: -90, label: "AUTHORITY DRIFT" },
+      { angle: -20, label: "MIRROR TEST" },
+      { angle:  50, label: "EMOTIONAL HEATMAP" },
+      { angle: 140, label: "POST-FILTER SHOPPING" },
+      { angle: 210, label: "FUTURE CONCEPTS" },
     ],
   },
   {
     id: "frameworks", label: "FRAMEWORKS", color: T.frameworks,
-    orbitPath: "M -60 430 C 40 520 140 565 195 565 C 250 565 350 520 450 430",
-    planets: [...FRAMEWORK_SYSTEM_PLANETS],
+    orbitPath: "M -60 940 C 0 720 90 620 195 600 C 300 620 390 720 450 940",
+    planets: FRAMEWORK_SYSTEM_PLANETS,
   },
 ];
 
@@ -112,6 +113,9 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    const nebulaImage = new Image();
+    nebulaImage.src = nebulaBackgroundUrl;
+
     type Star = {
       nx: number;
       ny: number;
@@ -123,22 +127,23 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       hero: boolean;
     };
 
-    // Stable for the lifetime of the mounted Atlas. The existing field remains
-    // spatially quiet; Pass 2 adds atmosphere around it rather than moving the map.
-    const stars: Star[] = Array.from({ length: 360 }, (_, index) => ({
+    // Keep some live twinkle above the image plate so the field still feels alive.
+    const stars: Star[] = Array.from({ length: 190 }, (_, index) => ({
       nx:    Math.random(),
       ny:    Math.random(),
-      r:     Math.pow(Math.random(), 2.8) * 1.5 + 0.18,
-      base:  Math.random() * 0.55 + 0.08,
+      r:     Math.pow(Math.random(), 2.5) * 1.15 + 0.18,
+      base:  Math.random() * 0.38 + 0.10,
       phase: Math.random() * Math.PI * 2,
-      spd:   Math.random() * 0.0009 + 0.0002,
-      gold:  Math.random() < 0.30,
-      hero:  index % 31 === 0,
+      spd:   Math.random() * 0.0011 + 0.00022,
+      gold:  Math.random() < 0.24,
+      hero:  index % 24 === 0,
     }));
 
     let cssWidth = W;
     let cssHeight = H;
     let raf = 0;
+    let t = 0;
+    let imageReady = false;
 
     function syncCanvasSize() {
       const rect = canvas.getBoundingClientRect();
@@ -157,99 +162,61 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function drawNebula(
-      x: number,
-      y: number,
-      radius: number,
-      inner: string,
-      middle: string,
-    ) {
-      const gradient = ctx.createRadialGradient(
-        x,
-        y,
-        0,
-        x,
-        y,
-        radius,
-      );
-      gradient.addColorStop(0, inner);
-      gradient.addColorStop(0.48, middle);
-      gradient.addColorStop(1, "transparent");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
-    }
+    function drawCoverImage(time: number) {
+      if (!imageReady) return;
 
-    function drawSignalStreak(
-      time: number,
-      cycleMs: number,
-      phaseOffset: number,
-      startNX: number,
-      startNY: number,
-      endNX: number,
-      endNY: number,
-      gold: boolean,
-    ) {
-      if (reduceMotion) return;
+      const imageWidth = nebulaImage.naturalWidth || 1;
+      const imageHeight = nebulaImage.naturalHeight || 1;
 
-      const phase =
-        ((time + phaseOffset) % cycleMs) / cycleMs;
+      // Oversize slightly so the plate can drift a few pixels.
+      const baseScale = Math.max(cssWidth / imageWidth, cssHeight / imageHeight) * 1.045;
+      const driftX = reduceMotion ? 0 : Math.sin(time * 0.00009) * 8;
+      const driftY = reduceMotion ? 0 : Math.cos(time * 0.00007) * 10;
 
-      // A signal is present for only a small portion of the cycle.
-      const windowStart = 0.74;
-      const windowEnd = 0.84;
-      if (phase < windowStart || phase > windowEnd) return;
-
-      const local =
-        (phase - windowStart) / (windowEnd - windowStart);
-      const alpha = Math.sin(local * Math.PI) * 0.48;
-
-      const x1 = startNX * cssWidth;
-      const y1 = startNY * cssHeight;
-      const x2 = endNX * cssWidth;
-      const y2 = endNY * cssHeight;
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-
-      // Reveal a short moving segment rather than a full static line.
-      const headT = Math.min(1, local * 1.18);
-      const tailT = Math.max(0, headT - 0.22);
-      const sx = x1 + dx * tailT;
-      const sy = y1 + dy * tailT;
-      const ex = x1 + dx * headT;
-      const ey = y1 + dy * headT;
-
-      const lineGradient = ctx.createLinearGradient(
-        sx,
-        sy,
-        ex,
-        ey,
-      );
-      lineGradient.addColorStop(0, "transparent");
-      lineGradient.addColorStop(
-        0.72,
-        gold
-          ? `rgba(232,213,163,${alpha * 0.38})`
-          : `rgba(174,201,239,${alpha * 0.34})`,
-      );
-      lineGradient.addColorStop(
-        1,
-        gold
-          ? `rgba(255,231,166,${alpha})`
-          : `rgba(207,225,255,${alpha})`,
-      );
+      const drawWidth = imageWidth * baseScale;
+      const drawHeight = imageHeight * baseScale;
+      const x = (cssWidth - drawWidth) * 0.5 + driftX;
+      const y = (cssHeight - drawHeight) * 0.5 + driftY;
 
       ctx.save();
-      ctx.strokeStyle = lineGradient;
-      ctx.lineWidth = 0.8;
-      ctx.shadowBlur = 7;
-      ctx.shadowColor = gold
-        ? `rgba(232,213,163,${alpha * 0.72})`
-        : `rgba(161,194,236,${alpha * 0.62})`;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
+      ctx.globalAlpha = 0.50;
+      ctx.drawImage(nebulaImage, x, y, drawWidth, drawHeight);
       ctx.restore();
+
+      // Gentle dark wash so the image reads as atmosphere rather than wallpaper.
+      ctx.fillStyle = "rgba(4,5,10,0.22)";
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+      // Preserve a subtle open center so the constellation remains legible.
+      const centerWash = ctx.createRadialGradient(
+        cssWidth * 0.5,
+        cssHeight * 0.46,
+        0,
+        cssWidth * 0.5,
+        cssHeight * 0.46,
+        Math.max(cssWidth, cssHeight) * 0.52,
+      );
+      centerWash.addColorStop(0, "rgba(5,5,10,0)");
+      centerWash.addColorStop(0.72, "rgba(5,5,10,0.05)");
+      centerWash.addColorStop(1, "rgba(5,5,10,0.16)");
+      ctx.fillStyle = centerWash;
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+      // Additional readability wash for the upper system band, especially
+      // around Case Studies where the nebula plate is brightest.
+      const upperReadabilityWash = ctx.createRadialGradient(
+        cssWidth * 0.34,
+        cssHeight * 0.29,
+        0,
+        cssWidth * 0.34,
+        cssHeight * 0.29,
+        Math.max(cssWidth, cssHeight) * 0.32,
+      );
+      upperReadabilityWash.addColorStop(0, "rgba(5,5,10,0.16)");
+      upperReadabilityWash.addColorStop(0.48, "rgba(5,5,10,0.10)");
+      upperReadabilityWash.addColorStop(1, "rgba(5,5,10,0)");
+      ctx.fillStyle = upperReadabilityWash;
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
     }
 
     function drawFrame(time: number) {
@@ -257,163 +224,33 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       ctx.fillStyle = T.bg;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-      const scaleX = cssWidth / W;
-      const scaleY = cssHeight / H;
-      const radiusScale = Math.min(scaleX, scaleY);
-      const seconds = time * 0.001;
+      drawCoverImage(time);
 
-      /*
-       * Pass 2 ambient depth.
-       *
-       * These fields drift only a few viewport pixels over long periods.
-       * They create parallax/depth without moving any authored constellation
-       * geometry or labels.
-       */
-      const driftAX = reduceMotion
-        ? 0
-        : Math.sin(seconds / 12.8) * 14 * scaleX;
-      const driftAY = reduceMotion
-        ? 0
-        : Math.cos(seconds / 16.4) * 9 * scaleY;
-      const driftBX = reduceMotion
-        ? 0
-        : Math.cos(seconds / 15.8) * 18 * scaleX;
-      const driftBY = reduceMotion
-        ? 0
-        : Math.sin(seconds / 19.5) * 11 * scaleY;
-      const driftCX = reduceMotion
-        ? 0
-        : Math.sin(seconds / 18.5) * 10 * scaleX;
-      const driftCY = reduceMotion
-        ? 0
-        : Math.cos(seconds / 14.2) * 13 * scaleY;
-
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-
-      drawNebula(
-        cssWidth * 0.16 + driftAX,
-        cssHeight * 0.30 + driftAY,
-        250 * radiusScale,
-        "rgba(76,118,179,0.070)",
-        "rgba(69,90,151,0.032)",
-      );
-
-      drawNebula(
-        cssWidth * 0.86 + driftBX,
-        cssHeight * 0.23 + driftBY,
-        225 * radiusScale,
-        "rgba(122,91,177,0.064)",
-        "rgba(87,71,142,0.029)",
-      );
-
-      drawNebula(
-        cssWidth * 0.50 + driftCX,
-        cssHeight * 0.68 + driftCY,
-        235 * radiusScale,
-        "rgba(70,143,116,0.052)",
-        "rgba(54,105,88,0.024)",
-      );
-
-      ctx.restore();
-
-      // Existing Atlas atmosphere, now given a restrained breathing envelope.
-      const nexusX = NEXUS.x * scaleX;
-      const nexusY = NEXUS.y * scaleY;
-      const nexusBreath = reduceMotion
-        ? 1
-        : 0.88 + Math.sin(seconds / 4.8) * 0.12;
-      const ng = ctx.createRadialGradient(
-        nexusX,
-        nexusY,
-        0,
-        nexusX,
-        nexusY,
-        310 * radiusScale,
-      );
-      ng.addColorStop(
-        0,
-        `rgba(138,174,200,${0.038 + nexusBreath * 0.008})`,
-      );
-      ng.addColorStop(
-        0.30,
-        `rgba(166,139,212,${0.024 + nexusBreath * 0.006})`,
-      );
-      ng.addColorStop(
-        0.60,
-        `rgba(106,184,138,${0.012 + nexusBreath * 0.004})`,
-      );
-      ng.addColorStop(1, "transparent");
-      ctx.fillStyle = ng;
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
-
-      const frameworkX = 195 * scaleX;
-      const frameworkY = 590 * scaleY;
-      const fg = ctx.createRadialGradient(
-        frameworkX,
-        frameworkY,
-        0,
-        frameworkX,
-        frameworkY,
-        190 * radiusScale,
-      );
-      fg.addColorStop(0, "rgba(106,184,138,0.030)");
-      fg.addColorStop(1, "transparent");
-      ctx.fillStyle = fg;
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
-
-      const upperX = 195 * scaleX;
-      const upperY = 155 * scaleY;
-      const ug = ctx.createRadialGradient(
-        upperX,
-        upperY,
-        0,
-        upperX,
-        upperY,
-        200 * radiusScale,
-      );
-      ug.addColorStop(0, "rgba(166,139,212,0.020)");
-      ug.addColorStop(0.5, "rgba(138,174,200,0.013)");
-      ug.addColorStop(1, "transparent");
-      ctx.fillStyle = ug;
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
-
-      // Star field: same spatial pattern, but with slightly richer depth and
-      // a few restrained "hero" stars that resolve briefly.
       for (const s of stars) {
-        const wave = reduceMotion
+        const tw = reduceMotion
           ? 0
-          : Math.sin(time * s.spd + s.phase);
-        const tw = wave * 0.22;
-        const opacity = Math.max(
-          0.04,
-          Math.min(0.88, s.base + tw),
-        );
-        const radius = s.hero
-          ? s.r * (reduceMotion ? 1 : 1 + Math.max(0, wave) * 0.34)
+          : Math.sin(time * s.spd + s.phase) * 0.22;
+        const opacity = Math.max(0.03, Math.min(0.92, s.base + tw));
+        const radius = s.hero && !reduceMotion
+          ? s.r * (1 + Math.max(0, Math.sin(time * s.spd + s.phase)) * 0.22)
           : s.r;
 
+        const x = s.nx * cssWidth;
+        const y = s.ny * cssHeight;
+
         ctx.beginPath();
-        ctx.arc(
-          s.nx * cssWidth,
-          s.ny * cssHeight,
-          radius,
-          0,
-          Math.PI * 2,
-        );
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fillStyle = s.gold
           ? `rgba(232,213,163,${opacity})`
-          : `rgba(210,218,232,${opacity * 0.72})`;
+          : `rgba(225,233,244,${opacity * 0.72})`;
         ctx.fill();
 
-        if (s.hero && opacity > 0.58) {
-          const x = s.nx * cssWidth;
-          const y = s.ny * cssHeight;
-          const flare = (opacity - 0.58) / 0.30;
+        if (s.hero && opacity > 0.50) {
+          const flare = (opacity - 0.50) / 0.35;
           ctx.save();
           ctx.strokeStyle = s.gold
-            ? `rgba(232,213,163,${flare * 0.24})`
-            : `rgba(199,217,247,${flare * 0.20})`;
+            ? `rgba(232,213,163,${flare * 0.18})`
+            : `rgba(199,217,247,${flare * 0.16})`;
           ctx.lineWidth = 0.45;
           ctx.beginPath();
           ctx.moveTo(x - 4.5, y);
@@ -424,50 +261,27 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
           ctx.restore();
         }
       }
-
-      // Rare signal events — enough to reward observation, not enough to
-      // compete with navigation.
-      drawSignalStreak(
-        time,
-        14000,
-        0,
-        0.08,
-        0.34,
-        0.34,
-        0.22,
-        true,
-      );
-      drawSignalStreak(
-        time,
-        19000,
-        11700,
-        0.70,
-        0.58,
-        0.92,
-        0.47,
-        false,
-      );
-
-      // Soft depth treatment keeps the edges quieter and the center navigable.
-      const depth = ctx.createRadialGradient(
-        cssWidth * 0.5,
-        cssHeight * 0.46,
-        Math.min(cssWidth, cssHeight) * 0.18,
-        cssWidth * 0.5,
-        cssHeight * 0.46,
-        Math.max(cssWidth, cssHeight) * 0.72,
-      );
-      depth.addColorStop(0, "transparent");
-      depth.addColorStop(0.72, "rgba(2,3,8,0.015)");
-      depth.addColorStop(1, "rgba(2,3,8,0.075)");
-      ctx.fillStyle = depth;
-      ctx.fillRect(0, 0, cssWidth, cssHeight);
     }
 
     function handleResize() {
       syncCanvasSize();
       if (reduceMotion) drawFrame(0);
     }
+
+    function renderInitialIfReady() {
+      syncCanvasSize();
+      drawFrame(t);
+    }
+
+    nebulaImage.onload = () => {
+      imageReady = true;
+      renderInitialIfReady();
+    };
+
+    nebulaImage.onerror = () => {
+      imageReady = false;
+      renderInitialIfReady();
+    };
 
     syncCanvasSize();
     window.addEventListener("resize", handleResize);
@@ -479,8 +293,9 @@ export function useStarfield(ref: RefObject<HTMLCanvasElement>) {
       };
     }
 
-    function draw(time: number) {
-      drawFrame(time);
+    function draw() {
+      t += 16;
+      drawFrame(t);
       raf = requestAnimationFrame(draw);
     }
 
