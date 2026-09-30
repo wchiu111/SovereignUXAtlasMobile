@@ -837,7 +837,7 @@ export default function LandingScene({
         <div
           style={{
             position: "absolute",
-            top: "calc(68px + env(safe-area-inset-top, 0px))",
+            top: "calc(44px + env(safe-area-inset-top, 0px))",
             left: 4.5,
             right: 4.5,
             display: "flex",
