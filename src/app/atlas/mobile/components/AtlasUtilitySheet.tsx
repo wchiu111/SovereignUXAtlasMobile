@@ -1,13 +1,11 @@
 /**
  * AtlasUtilitySheet — search-only mobile utility layer.
  *
- * Consolidated Search pass:
- * - Pulling the top handle reveals Search immediately.
- * - The previous utility-menu destinations are removed.
- * - Empty search shows guided prompts.
- * - Query state expands the sheet for up to four results.
- * - The backdrop lives at the runtime-viewport level so the entire Atlas,
- *   including ENTER OBSERVATORY / gesture symbol / SWIPE UP, recedes together.
+ * Refinement pass:
+ * - The pull handle belongs to the drawer and travels with it.
+ * - Closed state leaves only the drawer's bottom handle area visible.
+ * - Search remains the only utility surface.
+ * - The full Atlas beneath recedes through the runtime-viewport backdrop.
  */
 
 import {
@@ -20,11 +18,9 @@ import { T } from "./mobileShared";
 import AtlasMobileSearch from "./AtlasMobileSearch";
 import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
-type DragOrigin = "handle" | "sheet";
-
-const IDLE_SHEET_HEIGHT = 356;
-const RESULTS_SHEET_HEIGHT = 480;
-const HIDDEN_CLEARANCE = 52;
+const IDLE_SHEET_HEIGHT = 370;
+const RESULTS_SHEET_HEIGHT = 500;
+const CLOSED_PEEK_HEIGHT = 36;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
 const TAP_SLOP = 8;
@@ -43,7 +39,6 @@ export default function AtlasUtilitySheet({
 
   const navigationTimerRef = useRef<number | null>(null);
   const drag = useRef<{
-    origin: DragOrigin;
     startY: number;
     startProgress: number;
     moved: boolean;
@@ -54,10 +49,10 @@ export default function AtlasUtilitySheet({
     ? RESULTS_SHEET_HEIGHT
     : IDLE_SHEET_HEIGHT;
   const activeProgress = dragging ? progress : open ? 1 : 0;
-  const translateY =
-    -(sheetHeight + HIDDEN_CLEARANCE) +
-    (sheetHeight + HIDDEN_CLEARANCE) * activeProgress;
+  const travelDistance = sheetHeight - CLOSED_PEEK_HEIGHT;
+  const translateY = -travelDistance * (1 - activeProgress);
   const overlayActive = activeProgress > 0.02;
+  const searchVisible = open || dragging;
 
   useEffect(() => {
     if (!dragging) setProgress(open ? 1 : 0);
@@ -79,8 +74,8 @@ export default function AtlasUtilitySheet({
       if (
         activeElement instanceof HTMLInputElement ||
         activeElement instanceof HTMLTextAreaElement ||
-        activeElement instanceof HTMLElement &&
-          activeElement.isContentEditable
+        (activeElement instanceof HTMLElement &&
+          activeElement.isContentEditable)
       ) {
         activeElement.blur();
         return;
@@ -116,56 +111,50 @@ export default function AtlasUtilitySheet({
     }, NAVIGATION_HANDOFF_DELAY);
   }
 
-  function beginDrag(
-    event: React.PointerEvent<HTMLElement>,
-    origin: DragOrigin,
+  function beginHandleDrag(
+    event: React.PointerEvent<HTMLButtonElement>,
   ) {
-    const target = event.target as HTMLElement | null;
-    if (
-      origin === "sheet" &&
-      target?.closest(
-        "input, button, [role='option'], [data-atlas-search-interactive='true']",
-      )
-    ) {
-      return;
-    }
-
     event.currentTarget.setPointerCapture?.(event.pointerId);
+
     drag.current = {
-      origin,
       startY: event.clientY,
       startProgress: open ? 1 : 0,
       moved: false,
       pointerId: event.pointerId,
     };
+
     setProgress(open ? 1 : 0);
     setDragging(true);
   }
 
-  function updateDrag(event: React.PointerEvent<HTMLElement>) {
+  function updateHandleDrag(
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
 
     const deltaY = event.clientY - current.startY;
     if (Math.abs(deltaY) > TAP_SLOP) current.moved = true;
 
-    const next = current.startProgress + deltaY / DRAG_DISTANCE;
+    const next =
+      current.startProgress + deltaY / DRAG_DISTANCE;
+
     setProgress(Math.max(0, Math.min(1, next)));
   }
 
-  function endDrag(event: React.PointerEvent<HTMLElement>) {
+  function endHandleDrag(
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
 
-    const wasTap = !current.moved;
-
-    if (wasTap && current.origin === "handle") {
+    if (!current.moved) {
       setOpen((value) => !value);
-    } else if (wasTap && current.origin === "sheet") {
-      setOpen(true);
     } else {
-      setOpen(progress >= OPEN_THRESHOLD);
-      if (progress < OPEN_THRESHOLD) {
+      const nextOpen = progress >= OPEN_THRESHOLD;
+      setOpen(nextOpen);
+
+      if (!nextOpen) {
         setSearchExpanded(false);
         setSearchResetKey((value) => value + 1);
       }
@@ -175,7 +164,7 @@ export default function AtlasUtilitySheet({
     setDragging(false);
   }
 
-  function cancelDrag() {
+  function cancelHandleDrag() {
     drag.current = null;
     setDragging(false);
     setProgress(open ? 1 : 0);
@@ -183,50 +172,6 @@ export default function AtlasUtilitySheet({
 
   const content = (
     <>
-      <button
-        type="button"
-        aria-label={open ? "Close Atlas search" : "Open Atlas search"}
-        aria-expanded={open}
-        onPointerDown={(event) => beginDrag(event, "handle")}
-        onPointerMove={updateDrag}
-        onPointerUp={endDrag}
-        onPointerCancel={cancelDrag}
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: 28,
-          transform: "translateX(-50%)",
-          width: 132,
-          height: 44,
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          border: "none",
-          padding: "3px 0 0",
-          background: "transparent",
-          opacity: activeProgress > 0.02 ? 0 : 1,
-          pointerEvents: activeProgress > 0.02 ? "none" : "auto",
-          cursor: "s-resize",
-          touchAction: "none",
-          zIndex: 60,
-          transition: dragging
-            ? "opacity 120ms ease"
-            : "opacity 180ms ease",
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            display: "block",
-            width: 44,
-            height: 4,
-            borderRadius: 999,
-            background: T.identityGold,
-            opacity: 0.62,
-          }}
-        />
-      </button>
-
       <div
         aria-hidden={!open && !dragging}
         onClick={closeLayer}
@@ -258,11 +203,6 @@ export default function AtlasUtilitySheet({
 
       <section
         aria-label="Search the Sovereign Atlas"
-        aria-hidden={!open && !dragging}
-        onPointerDown={(event) => beginDrag(event, "sheet")}
-        onPointerMove={updateDrag}
-        onPointerUp={endDrag}
-        onPointerCancel={cancelDrag}
         style={{
           position: "absolute",
           top: 0,
@@ -284,58 +224,81 @@ export default function AtlasUtilitySheet({
             : "none",
           backdropFilter: "blur(30px)",
           WebkitBackdropFilter: "blur(30px)",
-          pointerEvents: overlayActive ? "auto" : "none",
-          touchAction: "pan-y",
           transition: dragging
             ? "none"
             : "transform 420ms cubic-bezier(0.16,1,0.3,1), height 260ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms ease",
           overflow: "hidden",
         }}
       >
-        <div
-          aria-hidden="true"
+        {searchVisible && (
+          <div
+            data-atlas-search-interactive="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              pointerEvents:
+                open && !dragging ? "auto" : "none",
+            }}
+          >
+            <AtlasMobileSearch
+              key={searchResetKey}
+              onNavigate={handleNavigate}
+              onExpandedChange={setSearchExpanded}
+            />
+          </div>
+        )}
+
+        <button
+          type="button"
+          aria-label={open ? "Close Atlas search" : "Open Atlas search"}
+          aria-expanded={open}
+          onPointerDown={beginHandleDrag}
+          onPointerMove={updateHandleDrag}
+          onPointerUp={endHandleDrag}
+          onPointerCancel={cancelHandleDrag}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setOpen((value) => !value);
+            }
+          }}
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 26,
-            zIndex: 3,
-            cursor: "n-resize",
+            left: "50%",
+            bottom: 0,
+            zIndex: 4,
+            width: 132,
+            height: 44,
+            transform: "translateX(-50%)",
+            border: "none",
+            background: "transparent",
+            padding: 0,
+            cursor: open ? "n-resize" : "s-resize",
             touchAction: "none",
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           <span
+            aria-hidden="true"
             style={{
               position: "absolute",
-              top: 10,
               left: "50%",
-              width: 42,
-              height: 2,
+              bottom: 12,
+              width: 44,
+              height: 3,
               borderRadius: 999,
               background: T.identityGold,
-              opacity: open ? 0.28 : 0,
+              opacity: open ? 0.38 : 0.62,
               transform: "translateX(-50%)",
-              transition: "opacity 180ms ease",
-              pointerEvents: "none",
+              boxShadow: open
+                ? "0 0 10px rgba(232,200,109,0.08)"
+                : "none",
+              transition:
+                "opacity 180ms ease, box-shadow 180ms ease",
             }}
           />
-        </div>
-
-        <div
-          data-atlas-search-interactive="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 1,
-          }}
-        >
-          <AtlasMobileSearch
-            key={searchResetKey}
-            onNavigate={handleNavigate}
-            onExpandedChange={setSearchExpanded}
-          />
-        </div>
+        </button>
       </section>
     </>
   );

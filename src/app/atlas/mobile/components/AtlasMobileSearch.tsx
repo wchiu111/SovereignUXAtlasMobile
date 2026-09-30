@@ -60,21 +60,24 @@ export default function AtlasMobileSearch({
       style={{
         height: "100%",
         boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
         padding:
-          "30px 24px calc(22px + env(safe-area-inset-bottom, 0px))",
+          "28px 24px calc(46px + env(safe-area-inset-bottom, 0px))",
         overflow: "hidden",
       }}
     >
       <div
         style={{
+          flex: "0 0 auto",
           minHeight: 48,
           display: "grid",
-          gridTemplateColumns: "20px 1fr 40px",
+          gridTemplateColumns: "20px minmax(0,1fr) 40px",
           gap: 8,
           alignItems: "center",
           borderBottom: "1px solid rgba(232,200,109,0.52)",
           boxShadow: hasQuery
-            ? "0 10px 28px -20px rgba(232,200,109,0.62)"
+            ? "0 10px 28px -20px rgba(232,200,109,0.50)"
             : "none",
           transition:
             "border-color 180ms ease, box-shadow 180ms ease",
@@ -97,7 +100,9 @@ export default function AtlasMobileSearch({
         <input
           ref={inputRef}
           value={query}
-          type="search"
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
           role="combobox"
           aria-label="Search the Sovereign Atlas"
           aria-expanded={hasQuery}
@@ -148,6 +153,7 @@ export default function AtlasMobileSearch({
             lineHeight: 1.25,
             padding: 0,
             WebkitAppearance: "none",
+            appearance: "none",
           }}
         />
 
@@ -163,13 +169,14 @@ export default function AtlasMobileSearch({
             height: 44,
             border: "none",
             background: "transparent",
-            color: T.body,
-            opacity: hasQuery ? 0.56 : 0,
+            color: T.identityGold,
+            opacity: hasQuery ? 0.68 : 0,
             pointerEvents: hasQuery ? "auto" : "none",
             fontFamily: T.serif,
-            fontSize: 20,
+            fontSize: 21,
             cursor: "pointer",
             transition: "opacity 160ms ease",
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           ×
@@ -180,23 +187,17 @@ export default function AtlasMobileSearch({
         id="atlas-mobile-search-results"
         role={hasQuery ? "listbox" : undefined}
         style={{
-          marginTop: 12,
-          maxHeight:
-            "calc(100% - 62px - env(safe-area-inset-bottom, 0px))",
+          flex: "1 1 auto",
+          minHeight: 0,
+          marginTop: 16,
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
-          border: "1px solid rgba(232,200,109,0.14)",
-          borderRadius: 12,
-          background: "rgba(6,7,12,0.68)",
-          boxShadow: "0 18px 52px rgba(0,0,0,0.18)",
+          scrollbarWidth: "none",
         }}
       >
         {!hasQuery ? (
-          <div
-            aria-label="Guided Atlas searches"
-            style={{ padding: "6px 16px" }}
-          >
+          <div aria-label="Guided Atlas searches">
             {ATLAS_MOBILE_GUIDED_PROMPTS.map((prompt, index) => (
               <button
                 key={prompt.label}
@@ -204,7 +205,7 @@ export default function AtlasMobileSearch({
                 onClick={() => choosePrompt(prompt.query)}
                 style={{
                   width: "100%",
-                  minHeight: 47,
+                  minHeight: 54,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -216,13 +217,14 @@ export default function AtlasMobileSearch({
                       ? "0.5px solid rgba(232,200,109,0.11)"
                       : "none",
                   background: "transparent",
-                  padding: "8px 0",
+                  padding: "10px 2px",
                   color: T.body,
                   fontFamily: T.serif,
                   fontSize: 14.5,
                   lineHeight: 1.3,
                   textAlign: "left",
                   cursor: "pointer",
+                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 <span>{prompt.label}</span>
@@ -241,7 +243,7 @@ export default function AtlasMobileSearch({
             ))}
           </div>
         ) : results.length ? (
-          <div style={{ padding: 4 }}>
+          <div>
             {results.map((result, index) => {
               const active = index === activeIndex;
 
@@ -257,31 +259,26 @@ export default function AtlasMobileSearch({
                   onClick={() => activateResult(index)}
                   style={{
                     width: "100%",
-                    minHeight: 82,
+                    minHeight: 84,
                     display: "grid",
                     gridTemplateColumns: "minmax(0,1fr) 22px",
                     alignItems: "center",
                     gap: 12,
-                    border: "1px solid",
-                    borderColor: active
-                      ? "rgba(232,200,109,0.18)"
-                      : "transparent",
-                    borderBottomColor:
-                      !active && index < results.length - 1
-                        ? "rgba(232,200,109,0.09)"
-                        : active
-                        ? "rgba(232,200,109,0.18)"
-                        : "transparent",
-                    borderRadius: active ? 9 : 0,
+                    border: "none",
+                    borderBottom:
+                      index < results.length - 1
+                        ? "0.5px solid rgba(232,200,109,0.10)"
+                        : "none",
+                    borderRadius: 0,
                     background: active
-                      ? "rgba(15,16,23,0.92)"
+                      ? "rgba(232,200,109,0.045)"
                       : "transparent",
-                    padding: "12px 14px",
+                    padding: "12px 2px",
                     color: T.gold,
                     textAlign: "left",
                     cursor: "pointer",
-                    transition:
-                      "background 160ms ease, border-color 160ms ease",
+                    transition: "background 160ms ease",
+                    WebkitTapHighlightColor: "transparent",
                   }}
                 >
                   <span style={{ minWidth: 0 }}>
@@ -351,7 +348,7 @@ export default function AtlasMobileSearch({
           <div
             role="status"
             style={{
-              padding: "22px 18px 24px",
+              padding: "18px 2px 22px",
             }}
           >
             <div
