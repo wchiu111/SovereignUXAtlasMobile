@@ -1,9 +1,9 @@
 /**
  * AtlasUtilitySheet — search-only mobile utility layer.
  *
- * Refinement pass:
- * - The pull handle belongs to the drawer and travels with it.
- * - Closed state leaves only the drawer's bottom handle area visible.
+ * Touch + recessed-notch refinement:
+ * - The closed state exposes only a narrow recessed notch, not a full-width lip.
+ * - The notch/handle remains physically attached to the drawer and travels with it.
  * - Search remains the only utility surface.
  * - The full Atlas beneath recedes through the runtime-viewport backdrop.
  */
@@ -20,7 +20,9 @@ import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
 const IDLE_SHEET_HEIGHT = 370;
 const RESULTS_SHEET_HEIGHT = 500;
-const CLOSED_PEEK_HEIGHT = 36;
+const NOTCH_WIDTH = 90;
+const NOTCH_DEPTH = 12;
+const HANDLE_HIT_HEIGHT = 48;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
 const TAP_SLOP = 8;
@@ -49,10 +51,12 @@ export default function AtlasUtilitySheet({
     ? RESULTS_SHEET_HEIGHT
     : IDLE_SHEET_HEIGHT;
   const activeProgress = dragging ? progress : open ? 1 : 0;
-  const travelDistance = sheetHeight - CLOSED_PEEK_HEIGHT;
-  const translateY = -travelDistance * (1 - activeProgress);
+
+  // Closed: the body resolves completely above the viewport while the
+  // attached notch remains visible just below the top seam.
+  const translateY = -sheetHeight * (1 - activeProgress);
   const overlayActive = activeProgress > 0.02;
-  const searchVisible = open || dragging;
+  const searchVisible = open || dragging || activeProgress > 0.02;
 
   useEffect(() => {
     if (!dragging) setProgress(open ? 1 : 0);
@@ -208,46 +212,112 @@ export default function AtlasUtilitySheet({
           top: 0,
           left: "50%",
           width: "min(100%, 430px)",
-          height: `min(${sheetHeight}px, calc(100dvh - 12px))`,
+          height: sheetHeight + NOTCH_DEPTH,
           transform: `translate3d(-50%, ${translateY}px, 0)`,
           zIndex: 50,
           boxSizing: "border-box",
-          border: "0.5px solid rgba(232,213,163,0.16)",
-          borderTop: "none",
-          borderRadius: "0 0 28px 28px",
-          background:
-            "linear-gradient(180deg, rgba(12,13,19,0.985) 0%, rgba(7,8,13,0.994) 100%)",
-          boxShadow: overlayActive
-            ? `0 24px 74px rgba(0,0,0,${
-                0.20 + activeProgress * 0.40
-              })`
-            : "none",
-          backdropFilter: "blur(30px)",
-          WebkitBackdropFilter: "blur(30px)",
+          pointerEvents: "none",
           transition: dragging
             ? "none"
-            : "transform 420ms cubic-bezier(0.16,1,0.3,1), height 260ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms ease",
-          overflow: "hidden",
+            : "transform 420ms cubic-bezier(0.16,1,0.3,1), height 260ms cubic-bezier(0.22,1,0.36,1)",
+          overflow: "visible",
         }}
       >
-        {searchVisible && (
-          <div
-            data-atlas-search-interactive="true"
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 1,
-              pointerEvents:
-                open && !dragging ? "auto" : "none",
-            }}
-          >
-            <AtlasMobileSearch
-              key={searchResetKey}
-              onNavigate={handleNavigate}
-              onExpandedChange={setSearchExpanded}
-            />
-          </div>
-        )}
+        <div
+          style={{
+            position: "absolute",
+            inset: `0 0 ${NOTCH_DEPTH}px 0`,
+            boxSizing: "border-box",
+            borderLeft: "0.5px solid rgba(232,213,163,0.16)",
+            borderRight: "0.5px solid rgba(232,213,163,0.16)",
+            borderTop: "none",
+            borderRadius: "0 0 28px 28px",
+            background:
+              "linear-gradient(180deg, rgba(12,13,19,0.985) 0%, rgba(7,8,13,0.994) 100%)",
+            boxShadow: overlayActive
+              ? `0 24px 74px rgba(0,0,0,${
+                  0.20 + activeProgress * 0.40
+                })`
+              : "none",
+            backdropFilter: "blur(30px)",
+            WebkitBackdropFilter: "blur(30px)",
+            overflow: "hidden",
+            pointerEvents: "none",
+            transition:
+              "box-shadow 220ms ease",
+          }}
+        >
+          {searchVisible && (
+            <div
+              data-atlas-search-interactive="true"
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 1,
+                pointerEvents:
+                  open && !dragging ? "auto" : "none",
+              }}
+            >
+              <AtlasMobileSearch
+                key={searchResetKey}
+                onNavigate={handleNavigate}
+                onExpandedChange={setSearchExpanded}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom seam: split around the notch so it reads as one recessed edge. */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 28,
+            bottom: NOTCH_DEPTH,
+            width: `calc(50% - ${NOTCH_WIDTH / 2 + 28}px)`,
+            height: 1,
+            background: "rgba(232,213,163,0.16)",
+            pointerEvents: "none",
+          }}
+        />
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            right: 28,
+            bottom: NOTCH_DEPTH,
+            width: `calc(50% - ${NOTCH_WIDTH / 2 + 28}px)`,
+            height: 1,
+            background: "rgba(232,213,163,0.16)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <svg
+          aria-hidden="true"
+          width={NOTCH_WIDTH}
+          height={NOTCH_DEPTH + 2}
+          viewBox={`0 0 ${NOTCH_WIDTH} ${NOTCH_DEPTH + 2}`}
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 0,
+            transform: "translateX(-50%)",
+            overflow: "visible",
+            pointerEvents: "none",
+          }}
+        >
+          <path
+            d="M 0 0 H 18 C 24 0 24 12 32 12 H 58 C 66 12 66 0 72 0 H 90 V 0 H 0 Z"
+            fill="rgba(7,8,13,0.994)"
+          />
+          <path
+            d="M 0 0 H 18 C 24 0 24 12 32 12 H 58 C 66 12 66 0 72 0 H 90"
+            fill="none"
+            stroke="rgba(232,213,163,0.20)"
+            strokeWidth="0.75"
+          />
+        </svg>
 
         <button
           type="button"
@@ -266,10 +336,10 @@ export default function AtlasUtilitySheet({
           style={{
             position: "absolute",
             left: "50%",
-            bottom: 0,
+            bottom: -(HANDLE_HIT_HEIGHT - NOTCH_DEPTH) / 2,
             zIndex: 4,
             width: 132,
-            height: 44,
+            height: HANDLE_HIT_HEIGHT,
             transform: "translateX(-50%)",
             border: "none",
             background: "transparent",
@@ -277,6 +347,7 @@ export default function AtlasUtilitySheet({
             cursor: open ? "n-resize" : "s-resize",
             touchAction: "none",
             WebkitTapHighlightColor: "transparent",
+            pointerEvents: "auto",
           }}
         >
           <span
@@ -284,15 +355,19 @@ export default function AtlasUtilitySheet({
             style={{
               position: "absolute",
               left: "50%",
-              bottom: 12,
-              width: 44,
-              height: 3,
+              top: 22,
+              width: 38,
+              height: 2,
               borderRadius: 999,
               background: T.identityGold,
-              opacity: open ? 0.38 : 0.62,
+              opacity: dragging
+                ? 0.72
+                : open
+                ? 0.42
+                : 0.62,
               transform: "translateX(-50%)",
-              boxShadow: open
-                ? "0 0 10px rgba(232,200,109,0.08)"
+              boxShadow: dragging
+                ? "0 0 12px rgba(232,200,109,0.18)"
                 : "none",
               transition:
                 "opacity 180ms ease, box-shadow 180ms ease",

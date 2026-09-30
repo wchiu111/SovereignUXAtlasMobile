@@ -9,6 +9,7 @@ import {
   ATLAS_MOBILE_GUIDED_PROMPTS,
   searchAtlasMobile,
   type AtlasMobileSearchDestination,
+  type AtlasMobileSearchResult,
 } from "./atlasMobileSearchIndex";
 
 interface AtlasMobileSearchProps {
@@ -16,13 +17,47 @@ interface AtlasMobileSearchProps {
   onExpandedChange?: (expanded: boolean) => void;
 }
 
+const COMMIT_RESOLVE_MS = 280;
+
+function colorWithAlpha(color: string, alpha: number) {
+  const match = color.match(/^#([0-9a-f]{6})$/i);
+  if (!match) return `rgba(232,200,109,${alpha})`;
+
+  const value = Number.parseInt(match[1], 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function resultWash(
+  result: AtlasMobileSearchResult,
+  strength: number,
+) {
+  return `linear-gradient(
+    90deg,
+    ${colorWithAlpha(result.color, strength)} 0%,
+    ${colorWithAlpha(result.color, strength * 0.48)} 58%,
+    ${colorWithAlpha(result.color, 0)} 100%
+  )`;
+}
+
 export default function AtlasMobileSearch({
   onNavigate,
   onExpandedChange,
 }: AtlasMobileSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const commitTimerRef = useRef<number | null>(null);
+
   const [query, setQuery] = useState("");
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [keyboardIndex, setKeyboardIndex] = useState(-1);
+  const [selectedResultId, setSelectedResultId] =
+    useState<string | null>(null);
+  const [pressedResultId, setPressedResultId] =
+    useState<string | null>(null);
+  const [committingResultId, setCommittingResultId] =
+    useState<string | null>(null);
 
   const results = useMemo(
     () => searchAtlasMobile(query),
@@ -35,22 +70,67 @@ export default function AtlasMobileSearch({
   }, [hasQuery, onExpandedChange]);
 
   useEffect(() => {
-    setActiveIndex(-1);
+    if (commitTimerRef.current !== null) {
+      window.clearTimeout(commitTimerRef.current);
+      commitTimerRef.current = null;
+    }
+
+    setKeyboardIndex(-1);
+    setSelectedResultId(null);
+    setPressedResultId(null);
+    setCommittingResultId(null);
   }, [query]);
+
+  useEffect(() => {
+    return () => {
+      if (commitTimerRef.current !== null) {
+        window.clearTimeout(commitTimerRef.current);
+      }
+    };
+  }, []);
 
   function choosePrompt(queryValue: string) {
     setQuery(queryValue);
+
     requestAnimationFrame(() => {
       inputRef.current?.focus({ preventScroll: true });
     });
   }
 
-  function activateResult(index: number) {
-    const result = results[index];
-    if (!result) return;
+  function commitResult(result: AtlasMobileSearchResult) {
+    if (committingResultId) return;
 
     inputRef.current?.blur();
-    onNavigate(result.destination);
+    setPressedResultId(null);
+    setSelectedResultId(result.id);
+    setCommittingResultId(result.id);
+
+    commitTimerRef.current = window.setTimeout(() => {
+      onNavigate(result.destination);
+      commitTimerRef.current = null;
+    }, COMMIT_RESOLVE_MS);
+  }
+
+  function activateResult(index: number) {
+    const result = results[index];
+    if (!result || committingResultId) return;
+
+    setKeyboardIndex(index);
+
+    if (selectedResultId === result.id) {
+      commitResult(result);
+      return;
+    }
+
+    // First completed touch/activation establishes intent.
+    setSelectedResultId(result.id);
+  }
+
+  function clearQuery() {
+    setQuery("");
+    requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
   }
 
   return (
@@ -109,8 +189,8 @@ export default function AtlasMobileSearch({
           aria-controls="atlas-mobile-search-results"
           aria-autocomplete="list"
           aria-activedescendant={
-            activeIndex >= 0 && results[activeIndex]
-              ? `atlas-mobile-result-${results[activeIndex].id}`
+            keyboardIndex >= 0 && results[keyboardIndex]
+              ? `atlas-mobile-result-${results[keyboardIndex].id}`
               : undefined
           }
           placeholder="What would you like to explore today?"
@@ -120,7 +200,7 @@ export default function AtlasMobileSearch({
           onKeyDown={(event) => {
             if (event.key === "ArrowDown" && results.length) {
               event.preventDefault();
-              setActiveIndex((index) =>
+              setKeyboardIndex((index) =>
                 index < 0 ? 0 : (index + 1) % results.length,
               );
               return;
@@ -128,7 +208,7 @@ export default function AtlasMobileSearch({
 
             if (event.key === "ArrowUp" && results.length) {
               event.preventDefault();
-              setActiveIndex((index) =>
+              setKeyboardIndex((index) =>
                 index <= 0 ? results.length - 1 : index - 1,
               );
               return;
@@ -136,7 +216,21 @@ export default function AtlasMobileSearch({
 
             if (event.key === "Enter" && results.length) {
               event.preventDefault();
-              activateResult(activeIndex >= 0 ? activeIndex : 0);
+
+              const selectedIndex =
+                selectedResultId !== null
+                  ? results.findIndex(
+                      (result) => result.id === selectedResultId,
+                    )
+                  : -1;
+              const targetIndex =
+                keyboardIndex >= 0
+                  ? keyboardIndex
+                  : selectedIndex >= 0
+                  ? selectedIndex
+                  : 0;
+
+              activateResult(targetIndex);
             }
           }}
           style={{
@@ -160,10 +254,7 @@ export default function AtlasMobileSearch({
         <button
           type="button"
           aria-label="Clear Atlas search"
-          onClick={() => {
-            setQuery("");
-            inputRef.current?.focus({ preventScroll: true });
-          }}
+          onClick={clearQuery}
           style={{
             width: 40,
             height: 44,
@@ -245,7 +336,35 @@ export default function AtlasMobileSearch({
         ) : results.length ? (
           <div>
             {results.map((result, index) => {
-              const active = index === activeIndex;
+              const selected =
+                selectedResultId === result.id;
+              const pressed =
+                pressedResultId === result.id;
+              const committing =
+                committingResultId === result.id;
+              const keyboardFocused =
+                keyboardIndex === index &&
+                selectedResultId === null;
+              const anotherSelected =
+                selectedResultId !== null && !selected;
+              const anotherCommitting =
+                committingResultId !== null && !committing;
+
+              const opacity = anotherCommitting
+                ? 0.34
+                : anotherSelected
+                ? 0.72
+                : 1;
+
+              const background = committing
+                ? resultWash(result, 0.12)
+                : selected
+                ? resultWash(result, 0.068)
+                : pressed
+                ? resultWash(result, 0.042)
+                : keyboardFocused
+                ? "rgba(232,200,109,0.032)"
+                : "transparent";
 
               return (
                 <button
@@ -253,9 +372,33 @@ export default function AtlasMobileSearch({
                   id={`atlas-mobile-result-${result.id}`}
                   type="button"
                   role="option"
-                  aria-selected={active}
-                  onPointerEnter={() => setActiveIndex(index)}
-                  onFocus={() => setActiveIndex(index)}
+                  aria-selected={selected || committing}
+                  aria-label={
+                    selected
+                      ? `${result.title}. Selected. Activate again to open.`
+                      : `${result.title}. Select result.`
+                  }
+                  onPointerDown={() => {
+                    if (!committingResultId) {
+                      setPressedResultId(result.id);
+                    }
+                  }}
+                  onPointerUp={() => {
+                    if (pressedResultId === result.id) {
+                      setPressedResultId(null);
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    if (pressedResultId === result.id) {
+                      setPressedResultId(null);
+                    }
+                  }}
+                  onPointerLeave={() => {
+                    if (pressedResultId === result.id) {
+                      setPressedResultId(null);
+                    }
+                  }}
+                  onFocus={() => setKeyboardIndex(index)}
                   onClick={() => activateResult(index)}
                   style={{
                     width: "100%",
@@ -270,14 +413,24 @@ export default function AtlasMobileSearch({
                         ? "0.5px solid rgba(232,200,109,0.10)"
                         : "none",
                     borderRadius: 0,
-                    background: active
-                      ? "rgba(232,200,109,0.045)"
-                      : "transparent",
+                    background,
                     padding: "12px 2px",
                     color: T.gold,
                     textAlign: "left",
                     cursor: "pointer",
-                    transition: "background 160ms ease",
+                    opacity,
+                    transform: pressed
+                      ? "scale(0.997) translateY(0.5px)"
+                      : "scale(1) translateY(0)",
+                    transformOrigin: "center",
+                    pointerEvents:
+                      committingResultId !== null
+                        ? "none"
+                        : "auto",
+                    transition:
+                      committingResultId !== null
+                        ? "background 260ms cubic-bezier(0.16,1,0.3,1), opacity 260ms ease, transform 160ms ease"
+                        : "background 180ms ease, opacity 180ms ease, transform 120ms ease",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
@@ -290,6 +443,9 @@ export default function AtlasMobileSearch({
                         fontFamily: T.serif,
                         fontSize: 17.5,
                         lineHeight: 1.08,
+                        opacity:
+                          selected || committing ? 1 : 0.92,
+                        transition: "opacity 180ms ease",
                       }}
                     >
                       {result.title}
@@ -304,7 +460,9 @@ export default function AtlasMobileSearch({
                         fontSize: 8,
                         lineHeight: 1.25,
                         letterSpacing: "0.13em",
-                        opacity: 0.92,
+                        opacity:
+                          selected || committing ? 1 : 0.82,
+                        transition: "opacity 180ms ease",
                       }}
                     >
                       {result.type} · {result.parent}
@@ -317,7 +475,9 @@ export default function AtlasMobileSearch({
                         fontFamily: T.serif,
                         fontSize: 12.5,
                         lineHeight: 1.35,
-                        opacity: 0.72,
+                        opacity:
+                          selected || committing ? 0.82 : 0.68,
+                        transition: "opacity 180ms ease",
                       }}
                     >
                       {result.description}
@@ -330,12 +490,26 @@ export default function AtlasMobileSearch({
                       color: T.identityGold,
                       fontFamily: T.mono,
                       fontSize: 15,
-                      opacity: active ? 0.95 : 0.58,
-                      transform: active
-                        ? "translateX(2px)"
-                        : "translateX(0)",
+                      opacity:
+                        committing
+                          ? 1
+                          : selected
+                          ? 0.95
+                          : pressed
+                          ? 0.84
+                          : 0.58,
+                      transform:
+                        committing
+                          ? "translateX(6px)"
+                          : selected
+                          ? "translateX(2px)"
+                          : pressed
+                          ? "translateX(3px)"
+                          : "translateX(0)",
                       transition:
-                        "opacity 160ms ease, transform 160ms ease",
+                        committingResultId !== null
+                          ? "opacity 260ms ease, transform 260ms cubic-bezier(0.16,1,0.3,1)"
+                          : "opacity 160ms ease, transform 160ms ease",
                     }}
                   >
                     →
