@@ -20,8 +20,8 @@ import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
 const IDLE_SHEET_HEIGHT = 334;
 const RESULTS_SHEET_HEIGHT = 466;
-const NOTCH_WIDTH = 104;
-const NOTCH_DEPTH = 11;
+const NOTCH_WIDTH = 136;
+const NOTCH_DEPTH = 14;
 const HANDLE_HIT_HEIGHT = 48;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
@@ -308,13 +308,13 @@ export default function AtlasUtilitySheet({
           }}
         >
           <path
-            d="M 0 0 H 20 C 30 0 30 11 39 11 H 65 C 74 11 74 0 84 0 H 104 V 0 H 0 Z"
+            d="M 0 0 H 28 C 40 0 40 14 52 14 H 84 C 96 14 96 0 108 0 H 136 V 0 H 0 Z"
             fill="rgba(7,8,13,0.994)"
           />
           <path
-            d="M 0 0 H 20 C 30 0 30 11 39 11 H 65 C 74 11 74 0 84 0 H 104"
+            d="M 0 0 H 28 C 40 0 40 14 52 14 H 84 C 96 14 96 0 108 0 H 136"
             fill="none"
-            stroke="rgba(232,213,163,0.24)"
+            stroke="rgba(232,213,163,0.28)"
             strokeWidth="0.7"
           />
         </svg>
@@ -356,7 +356,7 @@ export default function AtlasUtilitySheet({
               position: "absolute",
               left: "50%",
               top: 22,
-              width: 40,
+              width: 48,
               height: 2,
               borderRadius: 999,
               background: T.identityGold,

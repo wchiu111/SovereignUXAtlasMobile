@@ -358,9 +358,9 @@ export default function AtlasMobileSearch({
                 : 1;
 
               const background = committing
-                ? resultWash(result, 0.18)
+                ? resultWash(result, 0.19)
                 : selected
-                ? resultWash(result, 0.115)
+                ? resultWash(result, 0.125)
                 : pressed
                 ? resultWash(result, 0.055)
                 : keyboardFocused
@@ -405,7 +405,7 @@ export default function AtlasMobileSearch({
                     width: "100%",
                     minHeight: 80,
                     display: "grid",
-                    gridTemplateColumns: "minmax(0,1fr) 30px",
+                    gridTemplateColumns: "minmax(0,1fr) 28px",
                     alignItems: "center",
                     gap: 12,
                     border: "none",
@@ -416,7 +416,8 @@ export default function AtlasMobileSearch({
                     borderRadius: 0,
                     outline: "none",
                     background,
-                    padding: "10px 2px",
+                    boxSizing: "border-box",
+                    padding: "10px 8px 10px 12px",
                     color: T.gold,
                     textAlign: "left",
                     cursor: "pointer",
