@@ -17,7 +17,7 @@ interface AtlasMobileSearchProps {
   onExpandedChange?: (expanded: boolean) => void;
 }
 
-const COMMIT_RESOLVE_MS = 280;
+const COMMIT_RESOLVE_MS = 290;
 
 function colorWithAlpha(color: string, alpha: number) {
   const match = color.match(/^#([0-9a-f]{6})$/i);
@@ -38,7 +38,8 @@ function resultWash(
   return `linear-gradient(
     90deg,
     ${colorWithAlpha(result.color, strength)} 0%,
-    ${colorWithAlpha(result.color, strength * 0.48)} 58%,
+    ${colorWithAlpha(result.color, strength * 0.86)} 28%,
+    ${colorWithAlpha(result.color, strength * 0.46)} 64%,
     ${colorWithAlpha(result.color, 0)} 100%
   )`;
 }
@@ -143,7 +144,7 @@ export default function AtlasMobileSearch({
         display: "flex",
         flexDirection: "column",
         padding:
-          "28px 24px calc(46px + env(safe-area-inset-bottom, 0px))",
+          "24px 24px calc(32px + env(safe-area-inset-bottom, 0px))",
         overflow: "hidden",
       }}
     >
@@ -280,7 +281,7 @@ export default function AtlasMobileSearch({
         style={{
           flex: "1 1 auto",
           minHeight: 0,
-          marginTop: 16,
+          marginTop: 14,
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -296,7 +297,7 @@ export default function AtlasMobileSearch({
                 onClick={() => choosePrompt(prompt.query)}
                 style={{
                   width: "100%",
-                  minHeight: 54,
+                  minHeight: 52,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -308,7 +309,7 @@ export default function AtlasMobileSearch({
                       ? "0.5px solid rgba(232,200,109,0.11)"
                       : "none",
                   background: "transparent",
-                  padding: "10px 2px",
+                  padding: "8px 2px",
                   color: T.body,
                   fontFamily: T.serif,
                   fontSize: 14.5,
@@ -351,19 +352,19 @@ export default function AtlasMobileSearch({
                 committingResultId !== null && !committing;
 
               const opacity = anotherCommitting
-                ? 0.34
+                ? 0.30
                 : anotherSelected
-                ? 0.72
+                ? 0.68
                 : 1;
 
               const background = committing
-                ? resultWash(result, 0.12)
+                ? resultWash(result, 0.18)
                 : selected
-                ? resultWash(result, 0.068)
+                ? resultWash(result, 0.115)
                 : pressed
-                ? resultWash(result, 0.042)
+                ? resultWash(result, 0.055)
                 : keyboardFocused
-                ? "rgba(232,200,109,0.032)"
+                ? "rgba(232,200,109,0.035)"
                 : "transparent";
 
               return (
@@ -402,9 +403,9 @@ export default function AtlasMobileSearch({
                   onClick={() => activateResult(index)}
                   style={{
                     width: "100%",
-                    minHeight: 84,
+                    minHeight: 80,
                     display: "grid",
-                    gridTemplateColumns: "minmax(0,1fr) 22px",
+                    gridTemplateColumns: "minmax(0,1fr) 30px",
                     alignItems: "center",
                     gap: 12,
                     border: "none",
@@ -413,8 +414,9 @@ export default function AtlasMobileSearch({
                         ? "0.5px solid rgba(232,200,109,0.10)"
                         : "none",
                     borderRadius: 0,
+                    outline: "none",
                     background,
-                    padding: "12px 2px",
+                    padding: "10px 2px",
                     color: T.gold,
                     textAlign: "left",
                     cursor: "pointer",
@@ -476,7 +478,7 @@ export default function AtlasMobileSearch({
                         fontSize: 12.5,
                         lineHeight: 1.35,
                         opacity:
-                          selected || committing ? 0.82 : 0.68,
+                          selected || committing ? 0.88 : 0.66,
                         transition: "opacity 180ms ease",
                       }}
                     >
@@ -487,16 +489,31 @@ export default function AtlasMobileSearch({
                   <span
                     aria-hidden="true"
                     style={{
+                      width: 28,
+                      height: 28,
+                      display: "grid",
+                      placeItems: "center",
+                      borderRadius: 999,
                       color: T.identityGold,
+                      background: committing
+                        ? colorWithAlpha(result.color, 0.14)
+                        : selected
+                        ? colorWithAlpha(result.color, 0.085)
+                        : "transparent",
+                      boxShadow: committing
+                        ? `0 0 18px ${colorWithAlpha(result.color, 0.16)}`
+                        : selected
+                        ? `0 0 12px ${colorWithAlpha(result.color, 0.08)}`
+                        : "none",
                       fontFamily: T.mono,
                       fontSize: 15,
                       opacity:
                         committing
                           ? 1
                           : selected
-                          ? 0.95
+                          ? 0.98
                           : pressed
-                          ? 0.84
+                          ? 0.86
                           : 0.58,
                       transform:
                         committing
@@ -508,8 +525,8 @@ export default function AtlasMobileSearch({
                           : "translateX(0)",
                       transition:
                         committingResultId !== null
-                          ? "opacity 260ms ease, transform 260ms cubic-bezier(0.16,1,0.3,1)"
-                          : "opacity 160ms ease, transform 160ms ease",
+                          ? "background 260ms ease, box-shadow 260ms ease, opacity 260ms ease, transform 260ms cubic-bezier(0.16,1,0.3,1)"
+                          : "background 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease",
                     }}
                   >
                     →

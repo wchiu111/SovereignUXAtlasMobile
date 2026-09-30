@@ -18,10 +18,10 @@ import { T } from "./mobileShared";
 import AtlasMobileSearch from "./AtlasMobileSearch";
 import type { AtlasMobileSearchDestination } from "./atlasMobileSearchIndex";
 
-const IDLE_SHEET_HEIGHT = 370;
-const RESULTS_SHEET_HEIGHT = 500;
-const NOTCH_WIDTH = 90;
-const NOTCH_DEPTH = 12;
+const IDLE_SHEET_HEIGHT = 334;
+const RESULTS_SHEET_HEIGHT = 466;
+const NOTCH_WIDTH = 104;
+const NOTCH_DEPTH = 11;
 const HANDLE_HIT_HEIGHT = 48;
 const DRAG_DISTANCE = 180;
 const OPEN_THRESHOLD = 0.32;
@@ -228,15 +228,15 @@ export default function AtlasUtilitySheet({
             position: "absolute",
             inset: `0 0 ${NOTCH_DEPTH}px 0`,
             boxSizing: "border-box",
-            borderLeft: "0.5px solid rgba(232,213,163,0.16)",
-            borderRight: "0.5px solid rgba(232,213,163,0.16)",
+            borderLeft: "0.5px solid rgba(232,213,163,0.07)",
+            borderRight: "0.5px solid rgba(232,213,163,0.07)",
             borderTop: "none",
-            borderRadius: "0 0 28px 28px",
+            borderRadius: "0 0 18px 18px",
             background:
               "linear-gradient(180deg, rgba(12,13,19,0.985) 0%, rgba(7,8,13,0.994) 100%)",
             boxShadow: overlayActive
-              ? `0 24px 74px rgba(0,0,0,${
-                  0.20 + activeProgress * 0.40
+              ? `0 18px 58px rgba(0,0,0,${
+                  0.14 + activeProgress * 0.28
                 })`
               : "none",
             backdropFilter: "blur(30px)",
@@ -276,7 +276,7 @@ export default function AtlasUtilitySheet({
             bottom: NOTCH_DEPTH,
             width: `calc(50% - ${NOTCH_WIDTH / 2 + 28}px)`,
             height: 1,
-            background: "rgba(232,213,163,0.16)",
+            background: "rgba(232,213,163,0.13)",
             pointerEvents: "none",
           }}
         />
@@ -288,7 +288,7 @@ export default function AtlasUtilitySheet({
             bottom: NOTCH_DEPTH,
             width: `calc(50% - ${NOTCH_WIDTH / 2 + 28}px)`,
             height: 1,
-            background: "rgba(232,213,163,0.16)",
+            background: "rgba(232,213,163,0.13)",
             pointerEvents: "none",
           }}
         />
@@ -308,14 +308,14 @@ export default function AtlasUtilitySheet({
           }}
         >
           <path
-            d="M 0 0 H 18 C 24 0 24 12 32 12 H 58 C 66 12 66 0 72 0 H 90 V 0 H 0 Z"
+            d="M 0 0 H 20 C 30 0 30 11 39 11 H 65 C 74 11 74 0 84 0 H 104 V 0 H 0 Z"
             fill="rgba(7,8,13,0.994)"
           />
           <path
-            d="M 0 0 H 18 C 24 0 24 12 32 12 H 58 C 66 12 66 0 72 0 H 90"
+            d="M 0 0 H 20 C 30 0 30 11 39 11 H 65 C 74 11 74 0 84 0 H 104"
             fill="none"
-            stroke="rgba(232,213,163,0.20)"
-            strokeWidth="0.75"
+            stroke="rgba(232,213,163,0.24)"
+            strokeWidth="0.7"
           />
         </svg>
 
@@ -356,18 +356,18 @@ export default function AtlasUtilitySheet({
               position: "absolute",
               left: "50%",
               top: 22,
-              width: 38,
+              width: 40,
               height: 2,
               borderRadius: 999,
               background: T.identityGold,
               opacity: dragging
-                ? 0.72
+                ? 0.84
                 : open
-                ? 0.42
-                : 0.62,
+                ? 0.52
+                : 0.68,
               transform: "translateX(-50%)",
               boxShadow: dragging
-                ? "0 0 12px rgba(232,200,109,0.18)"
+                ? "0 0 12px rgba(232,200,109,0.20)"
                 : "none",
               transition:
                 "opacity 180ms ease, box-shadow 180ms ease",
