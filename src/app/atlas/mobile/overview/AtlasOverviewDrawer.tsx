@@ -17,6 +17,8 @@ export interface AtlasOverviewDrawerProps {
   compact?: boolean;
   children: ReactNode;
   footer?: ReactNode;
+  /** Optional single-row metadata directly below the title. */
+  headerMeta?: ReactNode;
 }
 
 /**
@@ -25,6 +27,7 @@ export interface AtlasOverviewDrawerProps {
  * The shell owns presentation invariants:
  * - shared viewport-relative geometry
  * - title / count alignment
+ * - optional metadata row directly beneath the title
  * - divider placement
  * - background / blur / border treatment
  * - drawer reveal / close motion
@@ -51,6 +54,7 @@ export default function AtlasOverviewDrawer({
   compact = false,
   children,
   footer,
+  headerMeta,
 }: AtlasOverviewDrawerProps) {
   const translateY = reducedMotion
     ? "0%"
@@ -105,7 +109,7 @@ export default function AtlasOverviewDrawer({
             alignItems: "baseline",
             justifyContent: "space-between",
             gap: 16,
-            marginBottom: 12,
+            marginBottom: headerMeta ? 11 : 12,
           }}
         >
           <div
@@ -138,6 +142,18 @@ export default function AtlasOverviewDrawer({
             </div>
           )}
         </div>
+
+        {headerMeta && (
+          <div
+            style={{
+              width: "100%",
+              minWidth: 0,
+              marginBottom: 14,
+            }}
+          >
+            {headerMeta}
+          </div>
+        )}
 
         <div
           style={{
