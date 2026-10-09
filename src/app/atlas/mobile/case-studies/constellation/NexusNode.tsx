@@ -3,10 +3,63 @@ import { useEffect, useRef, useState } from "react";
 import SovereignDesignPreviewDrawer from "../../components/SovereignDesignPreviewDrawer";
 import { FADE, NEXUS, T } from "../../components/mobileShared";
 
+function effectiveOpacity(node: Element | null) {
+  if (!node || typeof window === "undefined") return 0;
+
+  let opacity = 1;
+  let current: Element | null = node;
+
+  while (current) {
+    const parsed = Number.parseFloat(window.getComputedStyle(current).opacity);
+    if (Number.isFinite(parsed)) opacity *= parsed;
+
+    if (current === (node as SVGGraphicsElement).ownerSVGElement) break;
+    current = current.parentElement;
+  }
+
+  return opacity;
+}
+
 export default function NexusNode({ op }: { op: number }) {
   const [selected, setSelected] = useState(false);
+  const [contextVisible, setContextVisible] = useState(true);
   const rootRef = useRef<SVGGElement>(null);
-  const interactive = op > 0.5;
+
+  /*
+   * LandingScene visually fades the nexus by changing opacity on ancestor
+   * <g> elements. SVG opacity does not disable hit testing, so the hidden
+   * nexus previously remained tappable underneath Case Studies.
+   *
+   * Observe those ancestor style changes and disable this node whenever its
+   * effective rendered opacity drops below the interactive threshold.
+   */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof MutationObserver === "undefined") return;
+
+    const syncVisibility = () => {
+      setContextVisible(effectiveOpacity(root) > 0.35);
+    };
+
+    syncVisibility();
+
+    const observer = new MutationObserver(syncVisibility);
+    let current: Element | null = root;
+
+    while (current) {
+      observer.observe(current, {
+        attributes: true,
+        attributeFilter: ["style", "class"],
+      });
+
+      if (current === root.ownerSVGElement) break;
+      current = current.parentElement;
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const interactive = op > 0.5 && contextVisible;
 
   useEffect(() => {
     if (!interactive && selected) {

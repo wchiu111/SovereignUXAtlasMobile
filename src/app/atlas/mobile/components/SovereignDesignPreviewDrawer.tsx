@@ -6,7 +6,6 @@ import {
 } from "react";
 
 import { ATLAS_PREVIEW_CONTENT } from "../../components/AtlasPreviewContent";
-import AtlasOverviewChrome from "../overview/AtlasOverviewChrome";
 import AtlasOverviewDrawer from "../overview/AtlasOverviewDrawer";
 import {
   ATLAS_OVERVIEW_DRAWER_CLOSE_DURATION,
@@ -135,7 +134,7 @@ export default function SovereignDesignPreviewDrawer({
 
       <button
         type="button"
-        aria-label="Return to Atlas"
+        aria-label="Close Sovereign Design preview"
         onClick={requestClose}
         disabled={phase === "closing"}
         style={{
@@ -155,20 +154,10 @@ export default function SovereignDesignPreviewDrawer({
         }}
       />
 
-      <AtlasOverviewChrome
-        label="ATLAS"
-        ariaLabel="Back to Atlas"
-        onBack={requestClose}
-        visible={entered}
-        interactive={phase !== "closing"}
-        zIndex={4}
-      />
-
       {/*
-        Important: this full-size layout wrapper must NOT intercept input.
-        AtlasOverviewDrawer already owns pointerEvents:auto, so only the
-        visible drawer itself captures taps; the space above it falls through
-        to the backdrop button and closes the preview.
+        The preview is intentionally scrim-dismiss only. There is no visible
+        < ATLAS control because this is a temporary focus state on the landing
+        constellation, not a navigated child level.
       */}
       <div
         style={{
