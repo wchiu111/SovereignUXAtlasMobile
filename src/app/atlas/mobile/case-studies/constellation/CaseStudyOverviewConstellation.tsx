@@ -138,6 +138,13 @@ export default function CaseStudyOverviewConstellation({
         const isFocusedEntry = focusedEntryId === project.id;
         const isFocusedReturn = focusedReturnId === project.id;
         const projectPulse = selectionPulseId === project.id;
+
+        // When the parent core is selected, all projects remain equally
+        // discoverable. Once a project is selected, sibling nodes retreat to
+        // the same visual tier as the dimmed Case Studies core.
+        const selectionFocusOpacity =
+          caseStudiesSelected || isSelected ? 1 : 0.42;
+
         const siblingEntryOpacity = focusedEntryId
           ? isFocusedEntry
             ? 1
@@ -193,8 +200,11 @@ export default function CaseStudyOverviewConstellation({
               cursor: focusedEntryId || focusedReturnId ? "default" : "pointer",
               WebkitTapHighlightColor: "transparent",
               userSelect: "none",
-              opacity: siblingEntryOpacity,
-              transition: focusedEntryId || focusedReturnId ? "none" : FADE,
+              opacity: siblingEntryOpacity * selectionFocusOpacity,
+              transition:
+                focusedEntryId || focusedReturnId
+                  ? "none"
+                  : `${FADE}, opacity 220ms ease`,
               pointerEvents: focusedEntryId || focusedReturnId ? "none" : "auto",
             }}
           >

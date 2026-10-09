@@ -36,12 +36,18 @@ export default function FrameworkNode({
   const coreR = selected ? 7.5 : 6.5;
   const nodeColor =
     FRAMEWORK_TOPOLOGY.find(({ id }) => id === item.id)?.color ?? T.frameworks;
-  const siblingOpacity = selected ? 1 : parentSelected ? 0.86 : 0.78;
+
+  // Selection-focus rule:
+  // - parent selected: children remain equally available
+  // - child selected: preserve the selected node and dim its siblings
+  // This mirrors the visual retreat already established by the parent core.
+  const siblingOpacity = selected ? 1 : parentSelected ? 0.86 : 0.42;
+
   const animationPlayState =
     ambientPaused || selectionPulse ? "paused" : "running";
 
   const spatialTransition = interactive
-    ? FRAMEWORK_POSITION_TRANSITION
+    ? `${FRAMEWORK_POSITION_TRANSITION}, opacity 220ms ease`
     : "none";
   const labelTransition = interactive ? "opacity 240ms ease" : "none";
 

@@ -36,11 +36,18 @@ export default function ConstellationNode<TId extends string>({
   onSelect: () => void;
 }) {
   const coreR = selected ? 7.5 : 6.5;
-  const siblingOpacity = selected ? 1 : parentSelected ? 0.86 : 0.78;
+
+  // Selection-focus rule shared by templated constellations:
+  // when a child is selected, its siblings retreat to the same visual tier
+  // as the dimmed parent core instead of continuing to compete for attention.
+  const siblingOpacity = selected ? 1 : parentSelected ? 0.86 : 0.42;
+
   const animationPlayState =
     ambientPaused || selectionPulse ? "paused" : "running";
 
-  const spatialTransition = interactive ? positionTransition : "none";
+  const spatialTransition = interactive
+    ? `${positionTransition}, opacity 220ms ease`
+    : "none";
   const labelTransition = interactive ? "opacity 240ms ease" : "none";
 
   const outerDuration = selected
