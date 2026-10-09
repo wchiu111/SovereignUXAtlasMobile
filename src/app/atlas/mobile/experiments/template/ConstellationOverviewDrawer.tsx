@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { T } from "../../components/mobileShared";
 import AtlasOverviewDrawer from "../../overview/AtlasOverviewDrawer";
 import type {
@@ -17,6 +19,7 @@ export default function ConstellationOverviewDrawer<
   reducedMotion = false,
   closeDurationMs,
   reducedDurationMs,
+  headerMeta,
 }: {
   parent: ConstellationParentDefinition<TParentId>;
   item: ConstellationItem<TItemId> | null;
@@ -26,6 +29,7 @@ export default function ConstellationOverviewDrawer<
   reducedMotion?: boolean;
   closeDurationMs: number;
   reducedDurationMs: number;
+  headerMeta?: ReactNode;
 }) {
   const isParent = item === null;
 
@@ -39,6 +43,7 @@ export default function ConstellationOverviewDrawer<
       reducedMotion={reducedMotion}
       closeDurationMs={closeDurationMs}
       reducedDurationMs={reducedDurationMs}
+      headerMeta={!isParent ? headerMeta : undefined}
       footer={
         !isParent ? (
           <button
