@@ -3,7 +3,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent as ReactMouseEvent,
 } from "react";
 
 import { ATLAS_PREVIEW_CONTENT } from "../../components/AtlasPreviewContent";
@@ -57,6 +56,21 @@ export default function SovereignDesignPreviewDrawer({
     };
   }, [open]);
 
+  function requestClose() {
+    if (phase === "closing") return;
+
+    setPhase("closing");
+
+    const duration = reducedMotion
+      ? ATLAS_OVERVIEW_REDUCED_DRAWER_DURATION
+      : ATLAS_OVERVIEW_DRAWER_CLOSE_DURATION;
+
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+    }, duration);
+  }
+
   useEffect(() => {
     if (!open) return;
 
@@ -81,21 +95,6 @@ export default function SovereignDesignPreviewDrawer({
     };
   }, []);
 
-  function requestClose() {
-    if (phase === "closing") return;
-
-    setPhase("closing");
-
-    const duration = reducedMotion
-      ? ATLAS_OVERVIEW_REDUCED_DRAWER_DURATION
-      : ATLAS_OVERVIEW_DRAWER_CLOSE_DURATION;
-
-    closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null;
-      onClose();
-    }, duration);
-  }
-
   if (!open || typeof document === "undefined") return null;
 
   const entered = phase === "open";
@@ -105,14 +104,16 @@ export default function SovereignDesignPreviewDrawer({
       role="dialog"
       aria-modal="true"
       aria-label="Sovereign Design"
-      onClick={(event: ReactMouseEvent<HTMLDivElement>) =>
-        event.stopPropagation()
-      }
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        bottom: 0,
+        left: "50%",
+        width: "min(100%, 430px)",
+        transform: "translateX(-50%)",
         zIndex: 110,
         pointerEvents: "none",
+        overflow: "hidden",
       }}
     >
       <style>{`
@@ -135,16 +136,14 @@ export default function SovereignDesignPreviewDrawer({
       <button
         type="button"
         aria-label="Return to Atlas"
-        onClick={(event) => {
-          event.stopPropagation();
-          requestClose();
-        }}
+        onClick={requestClose}
+        disabled={phase === "closing"}
         style={{
           position: "absolute",
           inset: 0,
           border: "none",
           padding: 0,
-          pointerEvents: "auto",
+          pointerEvents: phase === "closing" ? "none" : "auto",
           cursor: "default",
           background:
             "radial-gradient(circle at 50% 45%, rgba(5,5,10,0.015) 0 78px, rgba(5,5,10,0.10) 126px, rgba(5,5,10,0.34) 58%, rgba(5,5,10,0.52) 100%)",
@@ -165,11 +164,17 @@ export default function SovereignDesignPreviewDrawer({
         zIndex={4}
       />
 
+      {/*
+        Important: this full-size layout wrapper must NOT intercept input.
+        AtlasOverviewDrawer already owns pointerEvents:auto, so only the
+        visible drawer itself captures taps; the space above it falls through
+        to the backdrop button and closes the preview.
+      */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          pointerEvents: phase === "closing" ? "none" : "auto",
+          pointerEvents: "none",
         }}
       >
         <AtlasOverviewDrawer
